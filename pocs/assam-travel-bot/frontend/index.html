@@ -18,89 +18,95 @@
             padding: 10px;
         }
 
-        .main-container {
-            max-width: 1200px;
+        .container {
+            max-width: 1000px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 15px;
             height: 95vh;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .chat-container {
+        .header {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 20px 25px;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #999;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .chat-box {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        .sidebar {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            text-align: center;
-            border-bottom: 3px solid rgba(255,255,255,0.2);
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-
-        .header p {
-            font-size: 13px;
-            opacity: 0.95;
-        }
-
-        .chat-area {
+        .messages-area {
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
+        .welcome {
+            text-align: center;
+            color: #999;
+            padding: 30px 20px;
+        }
+
+        .welcome h2 {
+            font-size: 20px;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        /* Message Styles */
         .message {
-            margin-bottom: 15px;
             display: flex;
+            gap: 10px;
             animation: slideIn 0.3s ease;
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .message.user {
             justify-content: flex-end;
         }
 
-        .message-content {
-            max-width: 75%;
-        }
-
         .message-bubble {
+            max-width: 70%;
             padding: 12px 16px;
-            border-radius: 14px;
+            border-radius: 12px;
             line-height: 1.5;
             word-wrap: break-word;
         }
@@ -108,79 +114,67 @@
         .message.user .message-bubble {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-bottom-right-radius: 4px;
         }
 
         .message.bot .message-bubble {
-            background: white;
+            background: #f5f7fa;
             color: #333;
-            border: 1px solid #e0e0e0;
-            border-bottom-left-radius: 4px;
         }
 
-        .message-time {
-            font-size: 11px;
-            opacity: 0.6;
-            margin-top: 4px;
-            padding: 0 8px;
-        }
-
-        /* Trip Plan Styling */
-        .trip-plan {
+        /* Card Styles */
+        .trip-card {
             background: white;
-            border: 1px solid #e0e0e0;
+            border: 2px solid #e8edf5;
             border-radius: 12px;
             padding: 16px;
-            margin-top: 8px;
+            margin: 10px 0;
         }
 
-        .trip-title {
-            font-size: 16px;
-            font-weight: 600;
+        .trip-card h3 {
             color: #667eea;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-bottom: 12px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 8px;
-        }
-
-        .itinerary {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            gap: 8px;
         }
 
-        .itinerary-day {
+        .day-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
             border-left: 4px solid #667eea;
-            padding: 10px 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 8px;
         }
 
         .day-title {
-            font-weight: 600;
+            font-weight: 700;
             color: #667eea;
-            margin-bottom: 6px;
             font-size: 13px;
+            margin-bottom: 8px;
         }
 
         .activity {
-            font-size: 12px;
             color: #555;
-            margin: 4px 0;
-            padding: 4px 0;
+            font-size: 12px;
+            margin: 6px 0;
+            padding-left: 12px;
+            border-left: 2px solid #667eea;
         }
 
         .place-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-            border: 1px solid #ddd;
-            border-radius: 10px;
+            background: linear-gradient(135deg, #fff8f3 0%, #ffe8e0 100%);
+            border-left: 4px solid #ff6b6b;
             padding: 12px;
-            margin: 8px 0;
+            margin: 10px 0;
+            border-radius: 8px;
         }
 
         .place-name {
             font-weight: 600;
-            color: #667eea;
+            color: #ff6b6b;
             font-size: 13px;
             margin-bottom: 6px;
         }
@@ -191,181 +185,42 @@
             line-height: 1.4;
         }
 
-        .weather-widget {
+        .weather-card {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 12px;
+            padding: 14px;
             border-radius: 10px;
-            margin-top: 8px;
-            font-size: 12px;
+            margin: 10px 0;
         }
 
         .weather-item {
             display: flex;
             justify-content: space-between;
-            margin: 6px 0;
+            padding: 6px 0;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .weather-item:last-child {
+            border-bottom: none;
         }
 
         .tip-box {
-            background: #fff8e1;
+            background: linear-gradient(135deg, #fff8e1 0%, #ffe8a8 100%);
             border-left: 4px solid #ffc107;
-            padding: 10px;
-            border-radius: 6px;
-            margin: 8px 0;
-            font-size: 12px;
-            color: #856404;
-        }
-
-        .sources-card {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 10px 12px;
-            border-radius: 6px;
-            margin-top: 8px;
-            font-size: 11px;
-            color: #555;
-        }
-
-        .badge {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            margin-right: 5px;
-            margin-top: 4px;
-        }
-
-        .welcome {
-            text-align: center;
-            color: #999;
-            padding: 30px 20px;
-        }
-
-        .welcome h2 {
-            font-size: 24px;
-            margin-bottom: 15px;
-            color: #667eea;
-        }
-
-        .welcome p {
+            padding: 12px;
+            border-radius: 8px;
             margin: 10px 0;
-            font-size: 14px;
-        }
-
-        .example-queries {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        .example-btn {
-            background: #f0f4ff;
-            border: 1px solid #667eea;
-            color: #667eea;
-            padding: 10px 12px;
-            border-radius: 8px;
-            cursor: pointer;
+            color: #856404;
             font-size: 12px;
-            transition: all 0.3s;
-            text-align: left;
-        }
-
-        .example-btn:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 10px;
-        }
-
-        .input-area input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 24px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .input-area input:focus {
-            border-color: #667eea;
-        }
-
-        .input-area input:disabled {
-            background: #f5f5f5;
-        }
-
-        .input-area button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 24px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .input-area button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .input-area button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .sidebar-section {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .sidebar-title {
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 10px;
-            font-size: 13px;
-            text-transform: uppercase;
-        }
-
-        .sidebar-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            text-align: left;
-            transition: all 0.3s;
-        }
-
-        .sidebar-btn:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
         }
 
         .loading {
             display: flex;
-            align-items: center;
             gap: 6px;
+            align-items: center;
             color: #667eea;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .dot {
@@ -385,25 +240,103 @@
             40% { opacity: 1; }
         }
 
-        .error {
-            background: #fee;
-            color: #c33;
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .input-area input:focus {
+            border-color: #667eea;
+        }
+
+        .input-area button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .input-area button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .input-area button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sidebar-section {
             padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .sidebar-title {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-btn {
+            display: block;
+            width: 100%;
+            padding: 9px 12px;
+            margin-bottom: 6px;
+            background: white;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
-            border-left: 3px solid #c33;
-            font-size: 13px;
-            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 11px;
+            text-align: left;
+            transition: all 0.3s;
+        }
+
+        .sidebar-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
         }
 
         @media (max-width: 768px) {
-            .main-container {
+            .main-content {
                 grid-template-columns: 1fr;
             }
             .sidebar {
                 display: none;
             }
-            .message-content {
-                max-width: 90%;
+            .message-bubble {
+                max-width: 85%;
             }
         }
 
@@ -419,97 +352,75 @@
             background: #667eea;
             border-radius: 3px;
         }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #764ba2;
-        }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <div class="chat-container">
-            <div class="header">
-                <h1>🗺️ Assam Travel Bot</h1>
-                <p>Your AI travel guide for Assam's hidden gems</p>
-            </div>
+    <div class="container">
+        <div class="header">
+            <h1>🗺️ Assam Travel Bot</h1>
+            <p>Your AI-powered travel guide to Assam's hidden gems</p>
+        </div>
 
-            <div class="chat-area" id="chatArea">
-                <div class="welcome">
-                    <h2>Welcome to Assam! 👋</h2>
-                    <p>Ask me about places to visit, plan your trip, or check the weather</p>
-                    <div class="example-queries" id="exampleQueries"></div>
+        <div class="main-content">
+            <div class="chat-box">
+                <div class="messages-area" id="messagesArea">
+                    <div class="welcome">
+                        <h2>Welcome to Assam! 👋</h2>
+                        <p>Ask me about places, plan your trip, or check the weather</p>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <form onsubmit="sendMessage(event)" style="display: flex; gap: 10px; width: 100%;">
+                        <input type="text" id="queryInput" placeholder="Ask about places, plan trips, check weather..." disabled />
+                        <button type="submit" id="sendBtn" disabled>Send</button>
+                    </form>
                 </div>
             </div>
 
-            <div class="input-area">
-                <form onsubmit="sendMessage(event)" style="display: flex; gap: 10px; width: 100%;">
-                    <input type="text" id="queryInput" placeholder="Ask about places, weather, travel plans..." disabled />
-                    <button type="submit" id="sendBtn" disabled>📤 Send</button>
-                </form>
-            </div>
-        </div>
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">🏔️ Places</div>
+                    <button class="sidebar-btn" onclick="quickQuery('Tell me about Kamakhya Temple')">Kamakhya Temple</button>
+                    <button class="sidebar-btn" onclick="quickQuery('Pobitora Wildlife Sanctuary')">Pobitora Wildlife</button>
+                    <button class="sidebar-btn" onclick="quickQuery('What about Deepor Beel?')">Deepor Beel</button>
+                </div>
 
-        <div class="sidebar">
-            <div class="sidebar-section">
-                <div class="sidebar-title">🏔️ Popular Places</div>
-                <button class="sidebar-btn" onclick="quickQuery('Tell me about Kamakhya Temple')">Kamakhya Temple</button>
-                <button class="sidebar-btn" onclick="quickQuery('What can I do at Pobitora Wildlife Sanctuary?')">Pobitora Wildlife</button>
-                <button class="sidebar-btn" onclick="quickQuery('Tell me about Deepor Beel')">Deepor Beel</button>
-                <button class="sidebar-btn" onclick="quickQuery('Describe Umananda Temple')">Umananda Temple</button>
-            </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">🌤️ Weather</div>
+                    <button class="sidebar-btn" onclick="quickQuery('Weather in Guwahati')">Guwahati Weather</button>
+                    <button class="sidebar-btn" onclick="quickQuery('Sunrise and sunset times')">Sunrise/Sunset</button>
+                </div>
 
-            <div class="sidebar-section">
-                <div class="sidebar-title">🌤️ Weather</div>
-                <button class="sidebar-btn" onclick="quickQuery('What is the weather in Guwahati today?')">Guwahati Weather</button>
-                <button class="sidebar-btn" onclick="quickQuery('Show me sunrise and sunset times in Guwahati')">Sunrise/Sunset</button>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="sidebar-title">✨ Trip Planning</div>
-                <button class="sidebar-btn" onclick="quickQuery('Plan a 2-day trip to Assam')">2-Day Trip</button>
-                <button class="sidebar-btn" onclick="quickQuery('Create a 3-day Assam itinerary')">3-Day Itinerary</button>
+                <div class="sidebar-section">
+                    <div class="sidebar-title">✈️ Plans</div>
+                    <button class="sidebar-btn" onclick="quickQuery('Plan a 2-day Assam trip')">2-Day Trip</button>
+                    <button class="sidebar-btn" onclick="quickQuery('3-day itinerary')">3-Day Trip</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const API_URL = 'http://localhost:8000';
-        const chatArea = document.getElementById('chatArea');
+        const messagesArea = document.getElementById('messagesArea');
         const queryInput = document.getElementById('queryInput');
         const sendBtn = document.getElementById('sendBtn');
         let sessionId = 'session_' + Date.now();
-        let messageCount = 0;
 
-        const exampleQueries = [
-            "Tell me about Kamakhya Temple",
-            "Plan a 2-day Assam trip",
-            "What's the weather in Guwahati?",
-            "Create a wildlife tour itinerary",
-        ];
-
-        // Populate example queries
-        const exampleContainer = document.getElementById('exampleQueries');
-        exampleQueries.forEach(q => {
-            const btn = document.createElement('button');
-            btn.className = 'example-btn';
-            btn.textContent = q;
-            btn.onclick = () => quickQuery(q);
-            exampleContainer.appendChild(btn);
-        });
-
-        // Check API availability
+        // Check API
         fetch(API_URL + '/health')
             .then(r => r.json())
-            .then(data => {
+            .then(() => {
                 queryInput.disabled = false;
                 sendBtn.disabled = false;
             })
-            .catch(err => {
-                chatArea.innerHTML = `<div class="error">❌ Cannot connect to bot API<br>Make sure: docker-compose up</div>`;
+            .catch(() => {
+                messagesArea.innerHTML = '<div style="color:red;padding:20px;">❌ Cannot connect to bot API</div>';
             });
 
-        async function quickQuery(query) {
-            queryInput.value = query;
+        function quickQuery(q) {
+            queryInput.value = q;
             queryInput.focus();
         }
 
@@ -521,135 +432,113 @@
             queryInput.value = '';
             sendBtn.disabled = true;
 
+            // Remove welcome on first message
+            const welcome = messagesArea.querySelector('.welcome');
+            if (welcome) welcome.remove();
+
+            // Add user message
             addMessage('user', query);
 
+            // Add loading
             const loadingId = 'loading_' + Date.now();
-            chatArea.innerHTML += `<div class="message bot" id="${loadingId}">
+            messagesArea.innerHTML += `<div class="message bot" id="${loadingId}">
                 <div class="loading"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
             </div>`;
-            scrollToBottom();
+            messagesArea.scrollTop = messagesArea.scrollHeight;
 
             try {
                 const response = await fetch(API_URL + '/query', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, session_id: sessionId })
+                    body: JSON.stringify({ query, session_id: sessionId })
                 });
 
-                const loadingEl = document.getElementById(loadingId);
-                if (loadingEl) loadingEl.remove();
+                document.getElementById(loadingId)?.remove();
 
                 if (!response.ok) {
                     const error = await response.json();
-                    addMessage('bot', '❌ Error: ' + (error.detail || response.statusText));
+                    addMessage('bot', '❌ ' + (error.detail || 'Error'));
                 } else {
                     const data = await response.json();
-                    addBotMessage(data.answer, data);
+                    formatAndAddMessage(data.answer);
                 }
             } catch (err) {
-                const loadingEl = document.getElementById(loadingId);
-                if (loadingEl) loadingEl.remove();
+                document.getElementById(loadingId)?.remove();
                 addMessage('bot', '❌ Network error: ' + err.message);
             }
 
-            scrollToBottom();
             sendBtn.disabled = false;
+            messagesArea.scrollTop = messagesArea.scrollHeight;
             queryInput.focus();
         }
 
-        function addMessage(type, content) {
-            messageCount++;
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            let html = `<div class="message ${type}">
-                <div class="message-content">
-                    <div class="message-bubble">${escapeHtml(content)}</div>
-                    <div class="message-time">${time}</div>
-                </div>
-            </div>`;
-
-            chatArea.innerHTML += html;
-
-            if (messageCount === 1 && chatArea.querySelector('.welcome')) {
-                chatArea.querySelector('.welcome').remove();
-            }
+        function addMessage(type, text) {
+            const msg = document.createElement('div');
+            msg.className = 'message ' + type;
+            msg.innerHTML = `<div class="message-bubble">${escapeHtml(text)}</div>`;
+            messagesArea.appendChild(msg);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
         }
 
-        function addBotMessage(answer, metadata) {
-            messageCount++;
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        function formatAndAddMessage(text) {
+            const msg = document.createElement('div');
+            msg.className = 'message bot';
 
-            // Check if this looks like a trip plan or structured content
-            const isTripPlan = answer.toLowerCase().includes('day') ||
-                              answer.toLowerCase().includes('itinerary') ||
-                              answer.toLowerCase().includes('trip') ||
-                              answer.toLowerCase().includes('morning') ||
-                              answer.toLowerCase().includes('afternoon') ||
-                              answer.toLowerCase().includes('evening');
+            // Format as HTML with proper structure
+            let html = '';
 
-            let formattedAnswer = formatAnswer(answer, isTripPlan);
+            // Check for trip/itinerary content
+            if (text.toLowerCase().includes('day') || text.toLowerCase().includes('itinerary')) {
+                html = `<div class="trip-card">
+                    <h3>📅 Trip Itinerary</h3>
+                    ${formatTripContent(text)}
+                </div>`;
+            }
+            // Check for weather content
+            else if (text.toLowerCase().includes('temperature') || text.toLowerCase().includes('weather') || text.toLowerCase().includes('sunrise')) {
+                html = `<div class="weather-card">
+                    ${text.replace(/\n/g, '<br>')}
+                </div>`;
+            }
+            // Check for place info
+            else if (text.toLowerCase().includes('temple') || text.toLowerCase().includes('sanctuary') || text.toLowerCase().includes('wildlife')) {
+                html = `<div class="place-card">
+                    <div class="place-name">📍 About This Place</div>
+                    <div class="place-info">${text}</div>
+                </div>`;
+            }
+            // Default formatting
+            else {
+                html = `<div class="message-bubble">${text.replace(/\n/g, '<br>')}</div>`;
+            }
 
-            let html = `<div class="message bot">
-                <div class="message-content">
-                    <div class="message-bubble">${formattedAnswer}</div>
-                    <div class="message-time">${time}</div>`;
+            msg.innerHTML = html;
+            messagesArea.appendChild(msg);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
 
-            if (metadata && metadata.route_taken) {
-                html += `<div class="sources-card">
-                    <strong>🎯 Route:</strong>`;
+        function formatTripContent(text) {
+            // Parse and format day-by-day itinerary
+            const lines = text.split('\n');
+            let html = '';
+            let currentDay = '';
 
-                metadata.route_taken.split(', ').forEach(r => {
-                    const icons = { 'KB': '📚', 'WX': '🌤️', 'EXP': '👤' };
-                    html += `<span class="badge">${icons[r] || ''} ${r}</span>`;
-                });
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
 
-                if (metadata.sources && Object.keys(metadata.sources).length > 0) {
-                    html += `<div style="margin-top: 8px;"><strong>📌 Sources:</strong><br>`;
-                    if (metadata.sources.kb_results) {
-                        html += `📍 ${metadata.sources.kb_results.map(r => r.site_name).join(', ')}<br>`;
-                    }
-                    if (metadata.sources.weather_location) {
-                        html += `🌤️ ${metadata.sources.weather_location}`;
-                    }
-                    html += `</div>`;
+                if (line.toLowerCase().includes('day')) {
+                    if (currentDay) html += '</div>';
+                    currentDay = line;
+                    html += `<div class="day-section"><div class="day-title">📅 ${line}</div>`;
+                } else if (line && currentDay) {
+                    html += `<div class="activity">• ${line}</div>`;
                 }
+            });
 
-                html += `<div style="margin-top: 6px; font-size: 10px; opacity: 0.7;">
-                    Confidence: ${(metadata.confidence * 100).toFixed(0)}%
-                </div></div>`;
-            }
+            if (currentDay) html += '</div>';
 
-            html += `</div></div>`;
-
-            chatArea.innerHTML += html;
-
-            if (messageCount === 1 && chatArea.querySelector('.welcome')) {
-                chatArea.querySelector('.welcome').remove();
-            }
-        }
-
-        function formatAnswer(text, isTripPlan) {
-            // Format markdown-like formatting
-            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                       .replace(/__(.*?)__/g, '<strong>$1</strong>')
-                       .replace(/\n/g, '<br>');
-
-            // Format trip plan sections
-            if (isTripPlan) {
-                // Detect day sections and format them
-                text = text.replace(/(?:Day|DAY)\s*(\d+)[:\s]*(.*?)(?=(?:Day|DAY)\s*\d+|$)/gs, (match, day, content) => {
-                    return `<div class="itinerary-day">
-                        <div class="day-title">📅 Day ${day}</div>
-                        <div class="activity">${content.trim().replace(/\n/g, '<br>')}</div>
-                    </div>`;
-                });
-            }
-
-            return text;
-        }
-
-        function scrollToBottom() {
-            chatArea.scrollTop = chatArea.scrollHeight;
+            return html || text;
         }
 
         function escapeHtml(text) {
