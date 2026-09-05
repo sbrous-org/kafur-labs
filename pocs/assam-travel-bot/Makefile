@@ -19,19 +19,42 @@ help:
 prereq:
 	@echo "📋 Setting up environment..."
 	@if [ -f .env ]; then \
-		echo "⚠️  .env already exists. Skipping."; \
+		echo "⚠️  .env already exists. Skipping copy."; \
 	else \
 		cp .env.example .env; \
 		echo "✓ Copied .env.example to .env"; \
 	fi
 	@echo ""
-	@echo "🔑 Enter your API keys:"
+	@echo "🤖 Which LLM provider do you want to use?"
 	@echo ""
-	@read -p "Enter ANTHROPIC_API_KEY (Claude - recommended, cheapest): " api_key; \
-	if [ -n "$$api_key" ]; then \
-		sed -i "s|ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=$$api_key|" .env; \
-		echo "✓ Anthropic API key set"; \
-	fi
+	@echo "  1) OpenRouter (RECOMMENDED) - GPT-4o, Claude, Gemini"
+	@echo "  2) Claude (Anthropic) - Cheapest but slower"
+	@echo "  3) OpenAI - GPT-3.5-turbo"
+	@echo ""
+	@read -p "Enter choice (1-3): " provider_choice; \
+	case $$provider_choice in \
+		1) \
+			sed -i "s|LLM_PROVIDER=.*|LLM_PROVIDER=openrouter|" .env; \
+			read -p "Enter OPENROUTER_API_KEY: " api_key; \
+			sed -i "s|OPENROUTER_API_KEY=.*|OPENROUTER_API_KEY=$$api_key|" .env; \
+			echo "✓ OpenRouter configured (GPT-4o)"; \
+			;; \
+		2) \
+			sed -i "s|LLM_PROVIDER=.*|LLM_PROVIDER=claude|" .env; \
+			read -p "Enter ANTHROPIC_API_KEY: " api_key; \
+			sed -i "s|ANTHROPIC_API_KEY=.*|ANTHROPIC_API_KEY=$$api_key|" .env; \
+			echo "✓ Claude (Anthropic) configured"; \
+			;; \
+		3) \
+			sed -i "s|LLM_PROVIDER=.*|LLM_PROVIDER=openai|" .env; \
+			read -p "Enter OPENAI_API_KEY: " api_key; \
+			sed -i "s|OPENAI_API_KEY=.*|OPENAI_API_KEY=$$api_key|" .env; \
+			echo "✓ OpenAI configured"; \
+			;; \
+		*) \
+			echo "Invalid choice. Using default (openrouter)"; \
+			;; \
+	esac
 	@echo ""
 	@read -p "Enter OPENWEATHER_API_KEY (optional, leave blank to skip): " weather_key; \
 	if [ -n "$$weather_key" ]; then \
@@ -40,6 +63,9 @@ prereq:
 	fi
 	@echo ""
 	@echo "✅ Environment setup complete"
+	@echo ""
+	@echo "Config:"
+	@grep "^LLM_PROVIDER" .env
 	@echo ""
 	@echo "Next: make build && make up"
 
