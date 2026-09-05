@@ -30,7 +30,7 @@ cp .env.example .env
 # Edit .env: add OpenAI API key and (optional) OpenWeatherMap key
 ```
 
-### 2. Run locally (without Docker)
+### 2a. Run backend locally (without Docker)
 
 ```bash
 pip install -r backend/requirements.txt
@@ -40,12 +40,25 @@ OPENAI_API_KEY=sk-... python -m uvicorn app.main:app --reload
 
 Visit http://localhost:8000/docs (Swagger UI) to try queries.
 
-### 3. Run with Docker
+### 2b. Run frontend locally (for development)
+
+```bash
+cd frontend
+npm install
+REACT_APP_API_URL=http://localhost:8000 npm start
+```
+
+Opens http://localhost:3000 automatically. Frontend hot-reloads on changes.
+
+### 3. Run with Docker (frontend + backend)
 
 ```bash
 docker-compose up --build
-# Bot runs on http://localhost:8000
+# Bot API runs on http://localhost:8000
+# Frontend UI runs on http://localhost:3000
 ```
+
+Open http://localhost:3000 in your browser to chat with the bot.
 
 ## Example queries (for eval set)
 
