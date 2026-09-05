@@ -94,8 +94,11 @@
             justify-content: flex-end;
         }
 
-        .message-bubble {
+        .message-content {
             max-width: 75%;
+        }
+
+        .message-bubble {
             padding: 12px 16px;
             border-radius: 14px;
             line-height: 1.5;
@@ -122,7 +125,73 @@
             padding: 0 8px;
         }
 
-        .weather-card {
+        /* Trip Plan Styling */
+        .trip-plan {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+
+        .trip-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .itinerary {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .itinerary-day {
+            border-left: 4px solid #667eea;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .day-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .activity {
+            font-size: 12px;
+            color: #555;
+            margin: 4px 0;
+            padding: 4px 0;
+        }
+
+        .place-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .place-name {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .place-info {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .weather-widget {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             padding: 12px;
@@ -131,10 +200,20 @@
             font-size: 12px;
         }
 
-        .weather-card div {
-            margin: 4px 0;
+        .weather-item {
             display: flex;
             justify-content: space-between;
+            margin: 6px 0;
+        }
+
+        .tip-box {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 12px;
+            color: #856404;
         }
 
         .sources-card {
@@ -143,7 +222,7 @@
             padding: 10px 12px;
             border-radius: 6px;
             margin-top: 8px;
-            font-size: 12px;
+            font-size: 11px;
             color: #555;
         }
 
@@ -323,7 +402,7 @@
             .sidebar {
                 display: none;
             }
-            .message-bubble {
+            .message-content {
                 max-width: 90%;
             }
         }
@@ -357,7 +436,7 @@
             <div class="chat-area" id="chatArea">
                 <div class="welcome">
                     <h2>Welcome to Assam! 👋</h2>
-                    <p>Ask me about places to visit, current weather, or plan your trip</p>
+                    <p>Ask me about places to visit, plan your trip, or check the weather</p>
                     <div class="example-queries" id="exampleQueries"></div>
                 </div>
             </div>
@@ -386,10 +465,9 @@
             </div>
 
             <div class="sidebar-section">
-                <div class="sidebar-title">✨ About Bot</div>
-                <p style="font-size: 12px; color: #666; line-height: 1.4;">
-                    AI-powered travel guide for Assam. Get instant info on places, real-time weather, and expert tips.
-                </p>
+                <div class="sidebar-title">✨ Trip Planning</div>
+                <button class="sidebar-btn" onclick="quickQuery('Plan a 2-day trip to Assam')">2-Day Trip</button>
+                <button class="sidebar-btn" onclick="quickQuery('Create a 3-day Assam itinerary')">3-Day Itinerary</button>
             </div>
         </div>
     </div>
@@ -404,9 +482,9 @@
 
         const exampleQueries = [
             "Tell me about Kamakhya Temple",
+            "Plan a 2-day Assam trip",
             "What's the weather in Guwahati?",
-            "Plan a 2-day nature and culture trip",
-            "Show me sunrise/sunset times",
+            "Create a wildlife tour itinerary",
         ];
 
         // Populate example queries
@@ -466,7 +544,7 @@
                     addMessage('bot', '❌ Error: ' + (error.detail || response.statusText));
                 } else {
                     const data = await response.json();
-                    addMessage('bot', data.answer, data);
+                    addBotMessage(data.answer, data);
                 }
             } catch (err) {
                 const loadingEl = document.getElementById(loadingId);
@@ -479,43 +557,13 @@
             queryInput.focus();
         }
 
-        function addMessage(type, content, metadata) {
+        function addMessage(type, content) {
             messageCount++;
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             let html = `<div class="message ${type}">
-                <div>
-                    <div class="message-bubble">
-                        ${escapeHtml(content)}`;
-
-            if (type === 'bot' && metadata) {
-                if (metadata.route_taken) {
-                    html += `<div class="sources-card">
-                        <strong>🎯 Route:</strong>`;
-
-                    metadata.route_taken.split(', ').forEach(r => {
-                        const icons = { 'KB': '📚', 'WX': '🌤️', 'EXP': '👤' };
-                        html += `<span class="badge">${icons[r] || ''} ${r}</span>`;
-                    });
-
-                    if (metadata.sources && Object.keys(metadata.sources).length > 0) {
-                        html += `<div style="margin-top: 8px;"><strong>📌 Sources:</strong><br>`;
-                        if (metadata.sources.kb_results) {
-                            html += `📍 ${metadata.sources.kb_results.map(r => r.site_name).join(', ')}<br>`;
-                        }
-                        if (metadata.sources.weather_location) {
-                            html += `🌤️ ${metadata.sources.weather_location}`;
-                        }
-                        html += `</div>`;
-                    }
-
-                    html += `<div style="margin-top: 6px; font-size: 10px; opacity: 0.7;">
-                        Confidence: ${(metadata.confidence * 100).toFixed(0)}%
-                    </div></div>`;
-                }
-            }
-
-            html += `</div>
+                <div class="message-content">
+                    <div class="message-bubble">${escapeHtml(content)}</div>
                     <div class="message-time">${time}</div>
                 </div>
             </div>`;
@@ -525,6 +573,79 @@
             if (messageCount === 1 && chatArea.querySelector('.welcome')) {
                 chatArea.querySelector('.welcome').remove();
             }
+        }
+
+        function addBotMessage(answer, metadata) {
+            messageCount++;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Check if this looks like a trip plan or structured content
+            const isTripPlan = answer.toLowerCase().includes('day') ||
+                              answer.toLowerCase().includes('itinerary') ||
+                              answer.toLowerCase().includes('trip') ||
+                              answer.toLowerCase().includes('morning') ||
+                              answer.toLowerCase().includes('afternoon') ||
+                              answer.toLowerCase().includes('evening');
+
+            let formattedAnswer = formatAnswer(answer, isTripPlan);
+
+            let html = `<div class="message bot">
+                <div class="message-content">
+                    <div class="message-bubble">${formattedAnswer}</div>
+                    <div class="message-time">${time}</div>`;
+
+            if (metadata && metadata.route_taken) {
+                html += `<div class="sources-card">
+                    <strong>🎯 Route:</strong>`;
+
+                metadata.route_taken.split(', ').forEach(r => {
+                    const icons = { 'KB': '📚', 'WX': '🌤️', 'EXP': '👤' };
+                    html += `<span class="badge">${icons[r] || ''} ${r}</span>`;
+                });
+
+                if (metadata.sources && Object.keys(metadata.sources).length > 0) {
+                    html += `<div style="margin-top: 8px;"><strong>📌 Sources:</strong><br>`;
+                    if (metadata.sources.kb_results) {
+                        html += `📍 ${metadata.sources.kb_results.map(r => r.site_name).join(', ')}<br>`;
+                    }
+                    if (metadata.sources.weather_location) {
+                        html += `🌤️ ${metadata.sources.weather_location}`;
+                    }
+                    html += `</div>`;
+                }
+
+                html += `<div style="margin-top: 6px; font-size: 10px; opacity: 0.7;">
+                    Confidence: ${(metadata.confidence * 100).toFixed(0)}%
+                </div></div>`;
+            }
+
+            html += `</div></div>`;
+
+            chatArea.innerHTML += html;
+
+            if (messageCount === 1 && chatArea.querySelector('.welcome')) {
+                chatArea.querySelector('.welcome').remove();
+            }
+        }
+
+        function formatAnswer(text, isTripPlan) {
+            // Format markdown-like formatting
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                       .replace(/__(.*?)__/g, '<strong>$1</strong>')
+                       .replace(/\n/g, '<br>');
+
+            // Format trip plan sections
+            if (isTripPlan) {
+                // Detect day sections and format them
+                text = text.replace(/(?:Day|DAY)\s*(\d+)[:\s]*(.*?)(?=(?:Day|DAY)\s*\d+|$)/gs, (match, day, content) => {
+                    return `<div class="itinerary-day">
+                        <div class="day-title">📅 Day ${day}</div>
+                        <div class="activity">${content.trim().replace(/\n/g, '<br>')}</div>
+                    </div>`;
+                });
+            }
+
+            return text;
         }
 
         function scrollToBottom() {
