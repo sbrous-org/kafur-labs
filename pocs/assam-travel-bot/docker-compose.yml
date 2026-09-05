@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  bot:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - ENV=development
+    volumes:
+      - ./knowledge_base:/app/knowledge_base
+      - ./backend:/app
+    depends_on:
+      - db
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=travelbot
+      - POSTGRES_USER=travelbot
+      - POSTGRES_PASSWORD=travelbot_dev_pass
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  bot-network:
+    driver: bridge
+
+volumes:
+  db_data:
