@@ -43,12 +43,17 @@ class AnswerSynthesis:
                 sources_info += f"  Attractions: {', '.join(place['unique_attractions'][:3])}\n"
 
         if "WX" in route and weather_data:
-            sources_info += f"\nCurrent weather at {weather_data['location']}:\n"
+            sources_info += f"\n☀️ Weather at {weather_data['location']}:\n"
             sources_info += f"- Temperature: {weather_data['current']['temp_c']}°C\n"
             sources_info += f"- Condition: {weather_data['current']['condition']}\n"
             sources_info += f"- Humidity: {weather_data['current']['humidity']}%\n"
             sources_info += f"- Wind: {weather_data['current']['wind_speed_kmh']} km/h\n"
-            sources_info += f"3-day forecast:\n"
+
+            if weather_data.get('sunrise'):
+                sources_info += f"\n🌅 Sunrise: {weather_data['sunrise']}\n"
+                sources_info += f"🌇 Sunset: {weather_data['sunset']}\n"
+
+            sources_info += f"\n📅 3-day forecast:\n"
             for day in weather_data.get('forecast_3days', []):
                 sources_info += f"  {day['date']}: {day['high_c']}°C / {day['low_c']}°C, {day['condition']}\n"
 

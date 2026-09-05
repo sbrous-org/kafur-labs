@@ -56,4 +56,11 @@ class Config:
             Config.get_llm_config()
         except ValueError as e:
             print(f"⚠️  Configuration error: {e}")
+            print(f"\nSet the appropriate API key in .env:")
+            if Config.LLM_PROVIDER == "claude":
+                print("  ANTHROPIC_API_KEY=sk-ant-...")
+            elif Config.LLM_PROVIDER == "openrouter":
+                print("  OPENROUTER_API_KEY=sk-or-v1-...")
+            elif Config.LLM_PROVIDER == "openai":
+                print("  OPENAI_API_KEY=sk-...")
             raise
