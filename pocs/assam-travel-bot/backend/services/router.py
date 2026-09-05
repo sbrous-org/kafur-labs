@@ -1,13 +1,13 @@
 from typing import Dict, List, Any
-import os
-from openai import OpenAI
+import json
+from services.llm_provider import LLMProvider
 
 
 class QueryRouter:
     """Routes queries to appropriate sources (KB, weather, expert, refuse)."""
 
-    def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    def __init__(self, llm_provider: LLMProvider):
+        self.llm = llm_provider
 
     def route(self, query: str, context_history: List[Dict[str, str]] = None) -> Dict[str, Any]:
         """
@@ -52,18 +52,8 @@ class QueryRouter:
         user_message = f"Query: {query}{context_str}"
 
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=0.3,
-                max_tokens=300
-            )
-
-            import json
-            result = json.loads(response.choices[0].message.content)
+            response = self.llm.invoke(system_prompt, user_message, max_tokens=300)
+            result = json.loads(response)
             return result
 
         except Exception as e:

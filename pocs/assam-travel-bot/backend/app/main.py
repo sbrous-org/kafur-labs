@@ -11,11 +11,13 @@ from pydantic import BaseModel
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from config import Config
 from models.schemas import QueryRequest, BotResponse
 from services.knowledge_base import KnowledgeBase
 from services.router import QueryRouter
 from services.weather import WeatherService
 from services.synthesis import AnswerSynthesis
+from services.llm_provider import create_llm_provider
 
 app = FastAPI(
     title="Assam Travel Bot",
@@ -32,12 +34,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Validate and load configuration
+try:
+    Config.validate()
+except ValueError as e:
+    print(f"❌ Configuration error: {e}")
+    raise
+
+# Initialize LLM provider
+llm_config = Config.get_llm_config()
+llm_provider = create_llm_provider(llm_config)
+print(f"✓ Using LLM: {Config.LLM_PROVIDER.upper()}")
+
 # Initialize services
 kb_path = Path(__file__).parent.parent.parent / "knowledge_base" / "places.jsonl"
 knowledge_base = KnowledgeBase(str(kb_path))
-router = QueryRouter()
+router = QueryRouter(llm_provider=llm_provider)
 weather_service = WeatherService()
-synthesis = AnswerSynthesis()
+synthesis = AnswerSynthesis(llm_provider=llm_provider)
 
 # Session store (POC: in-memory, not persistent)
 sessions = {}

@@ -1,14 +1,12 @@
-import os
-import json
 from typing import Dict, List, Any
-from openai import OpenAI
+from services.llm_provider import LLMProvider
 
 
 class AnswerSynthesis:
     """Synthesize final answer from retrieved sources."""
 
-    def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    def __init__(self, llm_provider: LLMProvider):
+        self.llm = llm_provider
 
     def synthesize(
         self,
@@ -78,16 +76,8 @@ class AnswerSynthesis:
 Provide a natural, helpful answer using only the sources above. Be specific (cite place names, facts), honest about unknowns, and conversational."""
 
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            return response.choices[0].message.content
+            answer = self.llm.invoke(system_prompt, user_message, max_tokens=500)
+            return answer
 
         except Exception as e:
             print(f"Synthesis error: {e}")
