@@ -7,7 +7,7 @@ class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
 
     @abstractmethod
-    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500) -> str:
+    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
         """
         Invoke the LLM with a prompt.
 
@@ -15,6 +15,8 @@ class LLMProvider(ABC):
             system_prompt: System context/instructions
             user_message: User query
             max_tokens: Maximum tokens in response
+            temperature: Sampling temperature. Use near-0 for deterministic
+                classification/routing, higher (0.6-0.8) for natural-language synthesis.
 
         Returns:
             String response from the LLM
@@ -30,10 +32,11 @@ class ClaudeProvider(LLMProvider):
         self.client = Anthropic(api_key=api_key)
         self.model = model
 
-    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500) -> str:
+    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
         response = self.client.messages.create(
             model=self.model,
             max_tokens=max_tokens,
+            temperature=temperature,
             system=system_prompt,
             messages=[{"role": "user", "content": user_message}]
         )
@@ -48,7 +51,7 @@ class OpenAIProvider(LLMProvider):
         self.client = OpenAI(api_key=api_key)
         self.model = model
 
-    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500) -> str:
+    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -56,7 +59,7 @@ class OpenAIProvider(LLMProvider):
                 {"role": "user", "content": user_message}
             ],
             max_tokens=max_tokens,
-            temperature=0.7
+            temperature=temperature
         )
         return response.choices[0].message.content
 
@@ -72,7 +75,7 @@ class OpenRouterProvider(LLMProvider):
         )
         self.model = model
 
-    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500) -> str:
+    def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
@@ -80,7 +83,7 @@ class OpenRouterProvider(LLMProvider):
                 {"role": "user", "content": user_message}
             ],
             max_tokens=max_tokens,
-            temperature=0.7
+            temperature=temperature
         )
         return response.choices[0].message.content
 

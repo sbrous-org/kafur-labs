@@ -3,340 +3,425 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assam Travel Bot</title>
+    <title>Assam Travel Planner</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap">
     <style>
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --accent: #ea580c;
+            --accent-light: #fb923c;
+            --ground: #faf5f0;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --weather-blue: #3b82f6;
+            --success-green: #10b981;
+            --spacing: 1rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --ground: #0f172a;
+                --text: #f1f5f9;
+                --text-secondary: #cbd5e1;
+                --border: #334155;
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --ground: #0f172a;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 10px;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--ground);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            height: 95vh;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            height: 100vh;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .header {
-            background: white;
-            padding: 20px 25px;
-            border-radius: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
+            padding: 24px 20px;
+            border-bottom: 2px solid var(--primary);
+            background: var(--ground);
         }
 
         .header h1 {
-            font-size: 26px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 5px;
+            font-family: 'Lora', serif;
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 4px;
+            font-weight: 700;
         }
 
         .header p {
-            font-size: 13px;
-            color: #999;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 400;
         }
 
-        .main-content {
+        .content {
             display: grid;
-            grid-template-columns: 1fr 280px;
-            gap: 10px;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            padding: 20px;
             flex: 1;
-            min-height: 0;
-        }
-
-        .chat-box {
-            background: white;
-            border-radius: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
             overflow: hidden;
         }
 
-        .messages-area {
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 0;
+            background: var(--ground);
+            border-radius: 12px;
+        }
+
+        .messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--ground);
+        }
+
+        .welcome {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .welcome h2 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        /* Trip Plan Card */
+        .trip-plan {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .trip-header {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .trip-header h2 {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .trip-duration {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .days-container {
             display: flex;
             flex-direction: column;
             gap: 16px;
         }
 
-        .welcome {
-            text-align: center;
-            color: #999;
-            padding: 30px 20px;
-        }
-
-        .welcome h2 {
-            font-size: 20px;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        /* Message Styles */
-        .message {
-            display: flex;
-            gap: 10px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message-bubble {
-            max-width: 70%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            line-height: 1.5;
-            word-wrap: break-word;
-        }
-
-        .message.user .message-bubble {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .message.bot .message-bubble {
-            background: #f5f7fa;
-            color: #333;
-        }
-
-        /* Card Styles */
-        .trip-card {
-            background: white;
-            border: 2px solid #e8edf5;
-            border-radius: 12px;
+        .day-card {
+            background: linear-gradient(135deg, #f0fdfa 0%, #f1f5f9 100%);
+            border: 2px solid var(--primary-light);
+            border-radius: 10px;
             padding: 16px;
-            margin: 10px 0;
+            position: relative;
         }
 
-        .trip-card h3 {
-            color: #667eea;
-            font-size: 14px;
+        .day-card::before {
+            content: attr(data-day);
+            position: absolute;
+            top: -14px;
+            left: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .day-section {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
-            border-left: 4px solid #667eea;
-            padding: 12px;
-            margin-bottom: 12px;
-            border-radius: 8px;
+            letter-spacing: 0.5px;
         }
 
         .day-title {
-            font-weight: 700;
-            color: #667eea;
-            font-size: 13px;
-            margin-bottom: 8px;
+            font-family: 'Lora', serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+
+        .activities {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .activity {
-            color: #555;
-            font-size: 12px;
-            margin: 6px 0;
-            padding-left: 12px;
-            border-left: 2px solid #667eea;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
         }
 
-        .place-card {
-            background: linear-gradient(135deg, #fff8f3 0%, #ffe8e0 100%);
-            border-left: 4px solid #ff6b6b;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-        }
-
-        .place-name {
+        .activity-time {
+            font-family: 'Inter', monospace;
             font-weight: 600;
-            color: #ff6b6b;
-            font-size: 13px;
-            margin-bottom: 6px;
+            color: var(--accent);
+            font-size: 12px;
+            min-width: 50px;
         }
 
-        .place-info {
-            font-size: 12px;
-            color: #666;
+        .activity-text {
+            color: var(--text);
+            font-size: 14px;
             line-height: 1.4;
         }
 
+        /* Weather Card */
         .weather-card {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, var(--weather-blue) 0%, #1e40af 100%);
             color: white;
-            padding: 14px;
-            border-radius: 10px;
-            margin: 10px 0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .weather-header {
+            font-family: 'Lora', serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 12px;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
 
         .weather-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .weather-item:last-child {
-            border-bottom: none;
-        }
-
-        .tip-box {
-            background: linear-gradient(135deg, #fff8e1 0%, #ffe8a8 100%);
-            border-left: 4px solid #ffc107;
+            background: rgba(255, 255, 255, 0.1);
             padding: 12px;
             border-radius: 8px;
-            margin: 10px 0;
-            color: #856404;
+        }
+
+        .weather-label {
             font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .loading {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-            color: #667eea;
-            font-size: 12px;
+        .weather-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 4px;
         }
 
-        .dot {
-            width: 6px;
-            height: 6px;
-            background: #667eea;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite;
+        /* Place Card */
+        .place-card {
+            background: linear-gradient(135deg, #fef2f2 0%, #ffe4e6 100%);
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 12px 0;
         }
 
-        .dot:nth-child(1) { animation-delay: 0s; }
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { opacity: 0.3; }
-            40% { opacity: 1; }
+        .place-name {
+            font-family: 'Lora', serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 8px;
         }
 
+        .place-info {
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* Input Area */
         .input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            padding: 16px;
+            background: var(--ground);
+            border-radius: 8px;
+            border: 1px solid var(--border);
         }
 
         .input-area input {
             flex: 1;
             padding: 12px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 24px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             font-size: 14px;
-            outline: none;
+            background: white;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
         }
 
         .input-area input:focus {
-            border-color: #667eea;
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
         }
 
         .input-area button {
             padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: 24px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             font-size: 14px;
+            transition: background 0.2s;
         }
 
-        .input-area button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .input-area button:hover {
+            background: var(--primary-light);
         }
 
         .input-area button:disabled {
-            background: #ccc;
+            background: var(--text-secondary);
             cursor: not-allowed;
         }
 
         /* Sidebar */
         .sidebar {
-            background: white;
-            border-radius: 14px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            padding: 15px;
-            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
+            padding: 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow-y: auto;
+            max-height: 100%;
         }
 
         .sidebar-section {
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
         }
 
         .sidebar-title {
             font-weight: 600;
-            color: #667eea;
             font-size: 12px;
+            color: var(--primary);
             text-transform: uppercase;
-            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
         }
 
         .sidebar-btn {
             display: block;
             width: 100%;
-            padding: 9px 12px;
-            margin-bottom: 6px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 11px;
+            padding: 10px 12px;
             text-align: left;
-            transition: all 0.3s;
+            background: var(--ground);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            transition: all 0.2s;
+            margin-bottom: 6px;
         }
 
         .sidebar-btn:hover {
-            background: #667eea;
+            background: var(--primary);
             color: white;
-            border-color: #667eea;
+            border-color: var(--primary);
+        }
+
+        .loading {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            color: var(--primary);
+        }
+
+        .loading-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: 0s; }
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(1); }
+            40% { opacity: 1; transform: scale(1.1); }
         }
 
         @media (max-width: 768px) {
-            .main-content {
+            .content {
                 grid-template-columns: 1fr;
             }
             .sidebar {
                 display: none;
-            }
-            .message-bubble {
-                max-width: 85%;
             }
         }
 
@@ -345,201 +430,144 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: var(--ground);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #667eea;
+            background: var(--primary);
             border-radius: 3px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🗺️ Assam Travel Bot</h1>
-            <p>Your AI-powered travel guide to Assam's hidden gems</p>
+            <h1>🗺️ Assam Travel Planner</h1>
+            <p>Beautiful itineraries for your Assam adventure</p>
         </div>
 
-        <div class="main-content">
-            <div class="chat-box">
-                <div class="messages-area" id="messagesArea">
+        <div class="content">
+            <div class="chat-container">
+                <div class="messages" id="messages">
                     <div class="welcome">
-                        <h2>Welcome to Assam! 👋</h2>
-                        <p>Ask me about places, plan your trip, or check the weather</p>
+                        <h2>Plan Your Journey</h2>
+                        <p>Ask for a trip itinerary, place recommendations, or weather info</p>
                     </div>
                 </div>
 
                 <div class="input-area">
-                    <form onsubmit="sendMessage(event)" style="display: flex; gap: 10px; width: 100%;">
-                        <input type="text" id="queryInput" placeholder="Ask about places, plan trips, check weather..." disabled />
-                        <button type="submit" id="sendBtn" disabled>Send</button>
-                    </form>
+                    <input type="text" id="query" placeholder="Plan a 2-day Assam trip..." disabled />
+                    <button id="send" disabled>Send</button>
                 </div>
             </div>
 
             <div class="sidebar">
                 <div class="sidebar-section">
-                    <div class="sidebar-title">🏔️ Places</div>
-                    <button class="sidebar-btn" onclick="quickQuery('Tell me about Kamakhya Temple')">Kamakhya Temple</button>
-                    <button class="sidebar-btn" onclick="quickQuery('Pobitora Wildlife Sanctuary')">Pobitora Wildlife</button>
-                    <button class="sidebar-btn" onclick="quickQuery('What about Deepor Beel?')">Deepor Beel</button>
+                    <div class="sidebar-title">🏔️ Quick Queries</div>
+                    <button class="sidebar-btn" onclick="quickSend('Plan a 2-day Assam trip')">2-Day Trip</button>
+                    <button class="sidebar-btn" onclick="quickSend('Plan a 3-day Assam itinerary')">3-Day Trip</button>
+                    <button class="sidebar-btn" onclick="quickSend('Wildlife and culture trip')">Wildlife Tour</button>
                 </div>
 
                 <div class="sidebar-section">
                     <div class="sidebar-title">🌤️ Weather</div>
-                    <button class="sidebar-btn" onclick="quickQuery('Weather in Guwahati')">Guwahati Weather</button>
-                    <button class="sidebar-btn" onclick="quickQuery('Sunrise and sunset times')">Sunrise/Sunset</button>
+                    <button class="sidebar-btn" onclick="quickSend('Weather in Guwahati')">Guwahati Weather</button>
+                    <button class="sidebar-btn" onclick="quickSend('Best season to visit Assam')">Best Season</button>
                 </div>
 
                 <div class="sidebar-section">
-                    <div class="sidebar-title">✈️ Plans</div>
-                    <button class="sidebar-btn" onclick="quickQuery('Plan a 2-day Assam trip')">2-Day Trip</button>
-                    <button class="sidebar-btn" onclick="quickQuery('3-day itinerary')">3-Day Trip</button>
+                    <div class="sidebar-title">📍 Places</div>
+                    <button class="sidebar-btn" onclick="quickSend('Tell me about Kamakhya Temple')">Kamakhya Temple</button>
+                    <button class="sidebar-btn" onclick="quickSend('Pobitora Wildlife Sanctuary')">Pobitora</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:8000';
-        const messagesArea = document.getElementById('messagesArea');
-        const queryInput = document.getElementById('queryInput');
-        const sendBtn = document.getElementById('sendBtn');
+        const API = 'http://localhost:8000';
+        const messages = document.getElementById('messages');
+        const query = document.getElementById('query');
+        const sendBtn = document.getElementById('send');
         let sessionId = 'session_' + Date.now();
 
         // Check API
-        fetch(API_URL + '/health')
+        fetch(API + '/health')
             .then(r => r.json())
             .then(() => {
-                queryInput.disabled = false;
+                query.disabled = false;
                 sendBtn.disabled = false;
-            })
-            .catch(() => {
-                messagesArea.innerHTML = '<div style="color:red;padding:20px;">❌ Cannot connect to bot API</div>';
             });
 
-        function quickQuery(q) {
-            queryInput.value = q;
-            queryInput.focus();
+        function quickSend(q) {
+            query.value = q;
+            query.focus();
+            sendMessage();
         }
 
-        async function sendMessage(e) {
-            e.preventDefault();
-            const query = queryInput.value.trim();
-            if (!query) return;
+        query.addEventListener('keypress', e => {
+            if (e.key === 'Enter' && !sendBtn.disabled) sendMessage();
+        });
 
-            queryInput.value = '';
+        sendBtn.addEventListener('click', sendMessage);
+
+        async function sendMessage() {
+            const q = query.value.trim();
+            if (!q) return;
+
+            query.value = '';
             sendBtn.disabled = true;
 
-            // Remove welcome on first message
-            const welcome = messagesArea.querySelector('.welcome');
+            // Clear welcome
+            const welcome = messages.querySelector('.welcome');
             if (welcome) welcome.remove();
 
-            // Add user message
-            addMessage('user', query);
+            // User message
+            const userMsg = document.createElement('div');
+            userMsg.style.textAlign = 'right';
+            userMsg.innerHTML = `<div style="display:inline-block;background:var(--primary);color:white;padding:12px 16px;border-radius:8px;max-width:70%;word-wrap:break-word;">${q}</div>`;
+            messages.appendChild(userMsg);
 
-            // Add loading
-            const loadingId = 'loading_' + Date.now();
-            messagesArea.innerHTML += `<div class="message bot" id="${loadingId}">
-                <div class="loading"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-            </div>`;
-            messagesArea.scrollTop = messagesArea.scrollHeight;
+            // Loading
+            const loadId = 'load_' + Date.now();
+            messages.innerHTML += `<div id="${loadId}"><div class="loading"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></div></div>`;
+            messages.scrollTop = messages.scrollHeight;
 
             try {
-                const response = await fetch(API_URL + '/query', {
+                const res = await fetch(API + '/query', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query, session_id: sessionId })
+                    body: JSON.stringify({ query: q, session_id: sessionId })
                 });
 
-                document.getElementById(loadingId)?.remove();
+                document.getElementById(loadId)?.remove();
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    addMessage('bot', '❌ ' + (error.detail || 'Error'));
+                if (!res.ok) {
+                    const err = await res.json();
+                    addMessage('error', '❌ ' + (err.detail || 'Error'));
                 } else {
-                    const data = await response.json();
-                    formatAndAddMessage(data.answer);
+                    const data = await res.json();
+                    renderResponse(data.answer, data.route_taken || '');
                 }
-            } catch (err) {
-                document.getElementById(loadingId)?.remove();
-                addMessage('bot', '❌ Network error: ' + err.message);
+            } catch (e) {
+                document.getElementById(loadId)?.remove();
+                addMessage('error', '❌ Network error');
             }
 
             sendBtn.disabled = false;
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-            queryInput.focus();
+            messages.scrollTop = messages.scrollHeight;
+            query.focus();
         }
 
-        function addMessage(type, text) {
-            const msg = document.createElement('div');
-            msg.className = 'message ' + type;
-            msg.innerHTML = `<div class="message-bubble">${escapeHtml(text)}</div>`;
-            messagesArea.appendChild(msg);
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-        }
-
-        function formatAndAddMessage(text) {
-            const msg = document.createElement('div');
-            msg.className = 'message bot';
-
-            // Format as HTML with proper structure
-            let html = '';
-
-            // Check for trip/itinerary content
-            if (text.toLowerCase().includes('day') || text.toLowerCase().includes('itinerary')) {
-                html = `<div class="trip-card">
-                    <h3>📅 Trip Itinerary</h3>
-                    ${formatTripContent(text)}
-                </div>`;
-            }
-            // Check for weather content
-            else if (text.toLowerCase().includes('temperature') || text.toLowerCase().includes('weather') || text.toLowerCase().includes('sunrise')) {
-                html = `<div class="weather-card">
-                    ${text.replace(/\n/g, '<br>')}
-                </div>`;
-            }
-            // Check for place info
-            else if (text.toLowerCase().includes('temple') || text.toLowerCase().includes('sanctuary') || text.toLowerCase().includes('wildlife')) {
-                html = `<div class="place-card">
-                    <div class="place-name">📍 About This Place</div>
-                    <div class="place-info">${text}</div>
-                </div>`;
-            }
-            // Default formatting
-            else {
-                html = `<div class="message-bubble">${text.replace(/\n/g, '<br>')}</div>`;
-            }
-
-            msg.innerHTML = html;
-            messagesArea.appendChild(msg);
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-        }
-
-        function formatTripContent(text) {
-            // Parse and format day-by-day itinerary
-            const lines = text.split('\n');
-            let html = '';
-            let currentDay = '';
-
-            lines.forEach(line => {
-                line = line.trim();
-                if (!line) return;
-
-                if (line.toLowerCase().includes('day')) {
-                    if (currentDay) html += '</div>';
-                    currentDay = line;
-                    html += `<div class="day-section"><div class="day-title">📅 ${line}</div>`;
-                } else if (line && currentDay) {
-                    html += `<div class="activity">• ${line}</div>`;
-                }
-            });
-
-            if (currentDay) html += '</div>';
-
-            return html || text;
-        }
+        // Matches a line that starts a new day, e.g. "Day 1", "**Day 2: Wildlife**", "- Day 3"
+        const DAY_HEADER_RE = /^[\s\-*]*\*{0,2}\s*Day\s+(\d+)\b\s*:?\s*\*{0,2}\s*(.*)$/i;
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -547,7 +575,110 @@
             return div.innerHTML;
         }
 
-        queryInput.focus();
+        // Minimal markdown -> HTML: escapes first, then re-enables **bold** and bullet lines.
+        function mdToHtml(text) {
+            let safe = escapeHtml(text.trim());
+            safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            safe = safe.replace(/^[\-*]\s+/gm, '');
+            return safe;
+        }
+
+        function renderResponse(text, routeTaken) {
+            const routes = routeTaken.split(',').map(r => r.trim());
+            const hasDayHeader = text.split('\n').some(line => DAY_HEADER_RE.test(line.trim()));
+
+            if (hasDayHeader) {
+                renderTripPlan(text);
+            } else if (routes.includes('WX')) {
+                renderWeatherResponse(text);
+            } else if (routes.includes('KB')) {
+                renderPlaceResponse(text);
+            } else {
+                addMessage('bot', text);
+            }
+        }
+
+        function renderTripPlan(text) {
+            const msg = document.createElement('div');
+            msg.className = 'trip-plan';
+
+            const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+            const days = [];
+            let currentDay = null;
+            let preamble = [];
+
+            lines.forEach(line => {
+                const match = line.match(DAY_HEADER_RE);
+                if (match) {
+                    if (currentDay) days.push(currentDay);
+                    currentDay = { num: match[1], title: match[2] || `Day ${match[1]}`, activities: [] };
+                } else if (currentDay) {
+                    currentDay.activities.push(line);
+                } else {
+                    preamble.push(line);
+                }
+            });
+            if (currentDay) days.push(currentDay);
+
+            let html = `<div class="trip-header">
+                <h2>📅 Trip Itinerary</h2>
+                <span class="trip-duration">${days.length}-Day Adventure</span>
+            </div>`;
+
+            if (preamble.length) {
+                html += `<p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">${mdToHtml(preamble.join(' '))}</p>`;
+            }
+
+            html += `<div class="days-container">`;
+            days.forEach(day => {
+                html += `<div class="day-card" data-day="Day ${day.num}">
+                    <div class="day-title">${mdToHtml(day.title)}</div>
+                    <div class="activities">`;
+                day.activities.forEach(activity => {
+                    html += `<div class="activity">
+                        <div class="activity-time">•</div>
+                        <div class="activity-text">${mdToHtml(activity)}</div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            });
+            html += `</div>`;
+
+            msg.innerHTML = html;
+            messages.appendChild(msg);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function renderWeatherResponse(text) {
+            const msg = document.createElement('div');
+            msg.className = 'weather-card';
+            msg.innerHTML = `<div class="weather-header">🌤️ Weather Information</div>
+                <div style="font-size:14px;line-height:1.6;">${mdToHtml(text).replace(/\n/g, '<br>')}</div>`;
+            messages.appendChild(msg);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function renderPlaceResponse(text) {
+            const msg = document.createElement('div');
+            msg.className = 'place-card';
+            msg.innerHTML = `<div class="place-name">📍 Place Information</div>
+                <div class="place-info">${mdToHtml(text).replace(/\n/g, '<br>')}</div>`;
+            messages.appendChild(msg);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function addMessage(type, text) {
+            const msg = document.createElement('div');
+            if (type === 'error') {
+                msg.style.color = 'var(--accent)';
+            }
+            const content = type === 'error' ? escapeHtml(text) : mdToHtml(text).replace(/\n/g, '<br>');
+            msg.innerHTML = `<div style="background:white;padding:12px 16px;border-radius:8px;border-left:3px solid var(--primary);">${content}</div>`;
+            messages.appendChild(msg);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        query.focus();
     </script>
 </body>
 </html>

@@ -85,8 +85,10 @@ Provide a natural, helpful answer using only the sources above. Be specific (cit
             return answer
 
         except Exception as e:
+            # Log full detail server-side; never surface raw provider errors
+            # (they can include internal request/user IDs) to the end user.
             print(f"Synthesis error: {e}")
-            return f"I encountered an error processing your query: {str(e)}"
+            return "Sorry, I'm having trouble reaching my answer engine right now. Please try again in a moment."
 
     def handle_no_match(self, query: str) -> str:
         """Handle case where query doesn't match KB."""
