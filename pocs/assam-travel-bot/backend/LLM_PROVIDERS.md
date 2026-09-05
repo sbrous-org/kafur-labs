@@ -32,6 +32,19 @@ LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-...
 ```
 
+### Mock — offline stub, no key / network (default)
+
+Deterministic canned responses. Lets you run the bot end to end (routing, KB search,
+weather guardrails, synthesis wiring) for local dev and the eval harness without any
+real model. **Answer text is fake** — not for judging answer quality.
+
+```bash
+LLM_PROVIDER=mock
+```
+
+No `.env` keys required — this is the default. Switch to a hosted provider above for
+real answers.
+
 ## Adding a new provider (e.g., Gemini, Llama)
 
 ### 1. Create a new class in `services/llm_provider.py`
