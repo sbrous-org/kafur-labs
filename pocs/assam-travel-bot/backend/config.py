@@ -10,11 +10,14 @@ class Config:
 
     # LLM Configuration
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "claude")
-    LLM_API_KEY = os.getenv(
-        "ANTHROPIC_API_KEY"
-        if LLM_PROVIDER == "claude"
-        else "OPENAI_API_KEY"
-    )
+
+    # Map provider to API key env var
+    if LLM_PROVIDER == "claude":
+        LLM_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+    elif LLM_PROVIDER == "openrouter":
+        LLM_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    else:  # openai
+        LLM_API_KEY = os.getenv("OPENAI_API_KEY")
     LLM_MODEL = os.getenv("LLM_MODEL")  # Optional: override default model
     LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "500"))
     LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))
