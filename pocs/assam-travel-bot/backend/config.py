@@ -9,13 +9,15 @@ class Config:
     """Configuration for the travel bot, loaded from environment."""
 
     # LLM Configuration
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "claude")
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "mock")
 
-    # Map provider to API key env var
+    # Map provider to API key env var (mock runs locally, no key needed)
     if LLM_PROVIDER == "claude":
         LLM_API_KEY = os.getenv("ANTHROPIC_API_KEY")
     elif LLM_PROVIDER == "openrouter":
         LLM_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    elif LLM_PROVIDER == "mock":
+        LLM_API_KEY = LLM_PROVIDER  # placeholder, unused by the mock provider
     else:  # openai
         LLM_API_KEY = os.getenv("OPENAI_API_KEY")
     LLM_MODEL = os.getenv("LLM_MODEL")  # Optional: override default model
@@ -39,6 +41,9 @@ class Config:
 
         if Config.LLM_MODEL:
             config["model"] = Config.LLM_MODEL
+
+        if Config.LLM_PROVIDER == "mock":
+            return config
 
         if not config["api_key"]:
             raise ValueError(
