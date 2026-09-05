@@ -47,7 +47,8 @@ llm_provider = create_llm_provider(llm_config)
 print(f"✓ Using LLM: {Config.LLM_PROVIDER.upper()}")
 
 # Initialize services
-kb_path = Path(__file__).parent.parent.parent / "knowledge_base" / "places.jsonl"
+# KB path: in Docker, mounted at /app/knowledge_base; locally, at ../knowledge_base
+kb_path = Path(__file__).parent.parent / "knowledge_base" / "places.jsonl"
 knowledge_base = KnowledgeBase(str(kb_path))
 router = QueryRouter(llm_provider=llm_provider)
 weather_service = WeatherService()
