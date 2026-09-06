@@ -90,43 +90,182 @@ class OpenRouterProvider(LLMProvider):
 
 class MockProvider(LLMProvider):
     """
-    Offline stub — no GPU, no API key, no network. Returns deterministic canned
-    text so the bot (routing, KB search, weather guardrails, synthesis wiring) can
-    be run and eval-tested end to end without a real LLM. Not for demos of answer
-    quality — use a hosted provider for that.
+    Offline stub — no GPU, no API key, no network (beyond the weather/geocoding
+    calls the bot itself makes). Deterministic: keyword-routes queries and
+    reformats the retrieved KB/weather sources into a readable answer, so the
+    whole bot — routing, KB, weather, hidden gems, experts, and the UI — runs
+    end to end and demos correctly without a hosted LLM. The prose is templated,
+    not generated; switch to claude/openai/openrouter for natural answers and
+    real answer-quality evaluation.
     """
 
     def __init__(self, model: str = "mock"):
         self.model = model
 
     def invoke(self, system_prompt: str, user_message: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
-        text = user_message.lower()
+        # Keyword-route on the *current* query only. QueryRouter appends prior
+        # turns after a "Previous turns:" marker; matching keywords in that
+        # history would make mock multi-turn routing stick to the first intent.
+        text = user_message.lower().split("\n\nprevious turns:")[0]
 
         # Router calls ask for JSON intent/entity extraction — sniff for that shape
         # and return the schema router.QueryRouter.route expects.
         sp = system_prompt.lower()
         if "json" in sp and ("intent" in sp or "route" in sp):
-            if any(w in text for w in ("weather", "rain", "temperature", "forecast", "climate")):
-                intent, route = "weather", ["WX"]
+            if any(w in text for w in ("hidden gem", "hidden gems", "offbeat", "off the beaten", "lesser known", "lesser-known", "local pick", "locals only", "what do locals", "most travellers miss", "most tourists miss")):
+                intent, route = "hidden_gems", ["GEMS"]
+            elif any(w in text for w in ("talk to someone", "talk to a local", "talk to a real", "connect me with", "connect with a", "speak to a guide", "real person", "someone who lives", "actual local", "video call with", "local expert")):
+                intent, route = "local_expert", ["EXPERT"]
+            elif any(w in text for w in ("weather", "rain", "temperature", "forecast", "climate")):
+                # Compound "tell me about X and the weather" → KB + WX.
+                if any(w in text for w in ("worth visiting", "tell me about", "what would i do",
+                                           "what to do", "about ", "and what")):
+                    intent, route = "itinerary", ["KB", "WX"]
+                else:
+                    intent, route = "weather", ["WX"]
             elif any(w in text for w in ("itinerary", "plan a", "-day", "day trip", "days in")):
                 intent, route = "itinerary", ["KB", "WX"]
-            elif any(w in text for w in ("book", "hire a guide", "contact", "phone number", "currently passable")):
+            elif any(w in text for w in ("book", "hire a guide", "contact", "phone number", "currently passable", "permit")):
                 intent, route = "expert_needed", ["EXP"]
             else:
                 intent, route = "place_info", ["KB"]
+            # Region can be carried from earlier turns ("plan 3 days around Sivasagar"
+            # → "talk to a local for this one"), so fall back to the full message.
+            full = user_message.lower()
+            region = None
+            for r in ("majuli", "kaziranga", "sivasagar", "charaideo", "jorhat", "guwahati",
+                      "kamrup", "morigaon", "tezpur", "hajo", "pobitora"):
+                if r in text or r in full:
+                    region = r.capitalize()
+                    break
+            interests = [
+                w for w in ("birding", "wildlife", "culture", "heritage", "history", "tea",
+                            "food", "safari", "temple", "craft", "photography", "trekking")
+                if w in text
+            ]
             return json.dumps({
                 "intent": intent,
-                "entities": {"place_names": [], "season": None, "activity": None},
+                "entities": {
+                    "place_names": [region] if region else [],
+                    "region": region,
+                    "season": None,
+                    "activity": interests[0] if interests else None,
+                    "interests": interests,
+                },
                 "route": route,
                 "reasoning": "mock provider: keyword-based routing",
                 "confidence": 0.9,
             })
+
+        # Short framing lines for the differentiator cards — keep these clean so
+        # the mock UI still looks right without a hosted provider.
+        if "hidden-gem" in sp:
+            return "Beyond the guidebook stops — here's what most travellers miss:"
+        if "connecting the traveller with a verified local guide" in sp:
+            return "Of course — Oxomiai connects you straight to a verified local guide."
+
+        # Synthesis call: build a readable answer straight from the structured
+        # sources QueryRouter/synthesis put in the user message. Deterministic
+        # and never invents facts — but presentable, so the offline demo works.
+        if "travel guide for assam" in sp or "synthesize" in sp:
+            return self._mock_synthesis(user_message)
 
         return (
             "[mock LLM] This is a deterministic offline response for local development. "
             "Set LLM_PROVIDER to a hosted provider (claude/openai/openrouter) for real answers. "
             f"Your query was: {user_message[:200]}"
         )
+
+    @staticmethod
+    def _mock_synthesis(user_message: str) -> str:
+        """Reformat the sources block into a plain-language answer (offline)."""
+        import re
+
+        body = user_message.split("\n\nprevious turns:")[0]
+        query = ""
+        m = re.match(r"\s*Query:\s*(.+)", body)
+        if m:
+            query = m.group(1).strip()
+        ql = query.lower()
+        wants_itinerary = any(w in ql for w in ("day trip", "-day", " days", "itinerary", "plan a", "plan me"))
+
+        out: List[str] = []
+        kb_paras: List[str] = []
+        wx_paras: List[str] = []
+
+        # --- Knowledge base entries (collected first, rendered before weather) ---
+        kb = re.search(r"Knowledge base results:\n(.*?)(?:\n\n☀|\n\nNote:|\Z)", body, re.DOTALL)
+        kb_entries = []
+        if kb:
+            kb_entries = re.findall(
+                r"-\s*([^:\n]+):\s*([^\n]+)\n(?:\s*Hours:\s*([^\n]+)\n)?(?:\s*Attractions:\s*([^\n]+))?",
+                kb.group(1),
+            )
+            for name, desc, hours, attractions in kb_entries:
+                para = f"**{name.strip()}** — {desc.strip()}"
+                if attractions.strip():
+                    para += f" Known for {attractions.strip().lower()}."
+                if hours.strip():
+                    para += f" Visiting hours: {hours.strip()}."
+                kb_paras.append(para)
+
+        # --- Itinerary shape: emit "Day N:" headers so the UI draws the timeline ---
+        if wants_itinerary and len(kb_entries) >= 2:
+            n = 2
+            mnum = re.search(r"(\d+)\s*[- ]?day", ql)
+            if mnum:
+                n = max(1, min(int(mnum.group(1)), len(kb_entries)))
+            lines = ["A quick offline outline — a hosted LLM adds pacing, travel time and stays:"]
+            for i, (name, desc, _h, _a) in enumerate(kb_entries[:n], start=1):
+                lines.append(f"Day {i}: {name.strip()}")
+                lines.append(f"- {desc.strip()}")
+            return "\n".join(lines)
+
+        # --- Weather ---
+        wx = re.search(r"Weather at ([^\n:]+):\n(.*?)(?:\n\n|\Z)", body, re.DOTALL)
+        if wx:
+            loc = wx.group(1).strip()
+            fields = dict(re.findall(r"-\s*([A-Za-z ]+):\s*([^\n]+)", wx.group(1) + wx.group(2)))
+            temp = fields.get("Temperature", "?")
+            cond = fields.get("Condition", "conditions unclear")
+            hum = fields.get("Humidity")
+            wind = fields.get("Wind")
+            line = f"Right now in {loc} it's {temp}, {cond.lower()}"
+            if hum:
+                line += f", humidity {hum}"
+            if wind:
+                line += f", wind {wind}"
+            wx_paras.append(line + ".")
+
+            fc = re.search(r"3-day forecast:\n(.*?)(?:\n\n|\Z)", body, re.DOTALL)
+            if fc:
+                days = [ln.strip() for ln in fc.group(1).splitlines() if ln.strip()]
+                if days:
+                    wx_paras.append("Next few days: " + "; ".join(days) + ".")
+            sr = re.search(r"Sunrise:\s*([^\n]+)", body)
+            ss = re.search(r"Sunset:\s*([^\n]+)", body)
+            if sr and ss:
+                wx_paras.append(f"Sun is up roughly {sr.group(1).strip()}–{ss.group(1).strip()}.")
+
+        # --- Assemble: KB first, then weather ---
+        if len(kb_paras) >= 2:
+            out.append("Here's what the knowledge base has:")
+        out.extend(kb_paras)
+        out.extend(wx_paras)
+
+        if "expert consultation" in body.lower():
+            out.append(
+                "For the current, on-the-ground details a local expert would answer this best."
+            )
+
+        if not out:
+            return (
+                "I don't have enough sourced information to answer that well. "
+                "Try asking about a specific place, the weather somewhere, or a trip plan."
+            )
+
+        note = "\n\n(Offline preview — set a hosted LLM provider in .env for a natural, written answer.)"
+        return "\n\n".join(out) + note
 
 
 def create_llm_provider(config: Dict[str, Any]) -> LLMProvider:

@@ -61,6 +61,33 @@ class RouteDecision(BaseModel):
     confidence: float
 
 
+class HiddenGem(BaseModel):
+    """A curated lesser-known spot surfaced by the hidden-gems service."""
+    name: str
+    near: Optional[str] = None
+    category: Optional[str] = None
+    short_description: str
+    why_hidden: Optional[str] = None
+    how_to_reach: Optional[str] = None
+    best_time: Optional[str] = None
+    tag: str = "Local pick"
+
+
+class LocalExpert(BaseModel):
+    """A verified local guide the traveller can connect with."""
+    name: str
+    region: str
+    specialties: List[str] = []
+    languages: List[str] = []
+    years_experience: int = 0
+    bio: Optional[str] = None
+    availability_label: str = "By appointment"
+    avg_response_minutes: Optional[int] = None
+    session_modes: List[str] = []
+    photo_emoji: Optional[str] = None
+    verification_status: str = "verified"
+
+
 class BotResponse(BaseModel):
     """Final response from the bot."""
     answer: str
@@ -70,3 +97,7 @@ class BotResponse(BaseModel):
     confidence: float
     session_id: str
     timestamp: str
+    # Populated only for the differentiator routes. The traveller acts on this
+    # structured data directly — it is never paraphrased by the LLM.
+    hidden_gems: Optional[List[HiddenGem]] = None
+    local_expert: Optional[LocalExpert] = None

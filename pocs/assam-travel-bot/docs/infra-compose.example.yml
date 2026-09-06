@@ -1,0 +1,86 @@
+version: "3.9"
+
+# TARGET-ARCHITECTURE reference only — NOT used by the POC.
+# The POC runs from the repo-root docker-compose.yml (one FastAPI service +
+# one static frontend). This file sketches the shared infra the microservices
+# design in ARCHITECTURE.md would need. Spin up shared infra first, then add
+# each service as its own build context under services/<name> once it exists.
+
+services:
+  # ---------- Shared infrastructure ----------
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: oxomiai
+      POSTGRES_PASSWORD: oxomiai
+      POSTGRES_DB: oxomiai
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+    volumes: ["mongodata:/data/db"]
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports: ["9092:9092"]
+
+  # ---------- Core services (uncomment as each is built) ----------
+  # api-gateway:
+  #   build: ./services/api-gateway
+  #   ports: ["8080:8080"]
+  #   depends_on: [user-service, conversation-orchestrator]
+
+  # conversation-orchestrator:
+  #   build: ./services/conversation-orchestrator
+  #   environment:
+  #     REDIS_URL: redis://redis:6379
+  #   depends_on: [redis, llm-gateway]
+
+  # llm-gateway:
+  #   build: ./services/llm-gateway
+  #   environment:
+  #     ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+
+  # itinerary-service:
+  #   build: ./services/itinerary-service
+  #   environment:
+  #     MONGO_URL: mongodb://mongo:27017/itineraries
+  #   depends_on: [mongo]
+
+  # hidden-gems-service:
+  #   build: ./services/hidden-gems-service
+  #   depends_on: [mongo]
+
+  # local-expert-service:
+  #   build: ./services/local-expert-service
+  #   environment:
+  #     DATABASE_URL: postgres://oxomiai:oxomiai@postgres:5432/oxomiai
+  #   depends_on: [postgres]
+
+  # booking-service:
+  #   build: ./services/booking-service
+  #   environment:
+  #     DATABASE_URL: postgres://oxomiai:oxomiai@postgres:5432/oxomiai
+  #     KAFKA_BROKERS: kafka:9092
+  #   depends_on: [postgres, kafka]
+
+volumes:
+  pgdata:
+  mongodata:

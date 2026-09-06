@@ -10,6 +10,38 @@ class WeatherService:
         self.base_url = "https://api.open-meteo.com/v1"
         self.geocoding_url = "https://geocoding-api.open-meteo.com/v1"
 
+    def geocode(self, place_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Resolve a place name to coordinates via Open-Meteo's free geocoding API.
+        Used when a weather query names a place that isn't in the knowledge base
+        (so we have no coordinates from KB metadata). Biased to Assam / India.
+        """
+        if not place_name:
+            return None
+        try:
+            resp = requests.get(
+                f"{self.geocoding_url}/search",
+                params={"name": place_name, "count": 5, "language": "en"},
+                timeout=5,
+            )
+            resp.raise_for_status()
+            results = resp.json().get("results") or []
+            if not results:
+                return None
+            # Prefer an Indian (ideally Assam) match, else the first result.
+            pick = next(
+                (r for r in results if r.get("admin1", "").lower() == "assam"),
+                next((r for r in results if r.get("country_code") == "IN"), results[0]),
+            )
+            return {
+                "name": pick.get("name", place_name),
+                "latitude": pick["latitude"],
+                "longitude": pick["longitude"],
+            }
+        except Exception as e:
+            print(f"Geocoding error for {place_name!r}: {e}")
+            return None
+
     def get_weather(self, latitude: float, longitude: float, place_name: str = "") -> Optional[Dict[str, Any]]:
         """
         Fetch current weather, forecast, and sunrise/sunset for a location.

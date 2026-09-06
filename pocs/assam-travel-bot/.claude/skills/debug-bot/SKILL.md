@@ -23,8 +23,15 @@ browser (index.html) --HTTP--> bot:8000 /query
    -> router.route()      LLM call #1  (intent + route JSON)
    -> knowledge_base.retrieve()        (TF-IDF, only if route has "KB")
    -> weather_service.get_weather()    (Open-Meteo, only if route has "WX")
-   -> synthesis.synthesize()  LLM call #2  (final answer)
+   -> hidden_gems.retrieve()           (TF-IDF over hidden_gems.jsonl, if route has "GEMS")
+   -> expert_directory.match()         (static local_experts.jsonl, if route has "EXPERT")
+   -> synthesis.synthesize()  LLM call #2  (final answer; GEMS/EXPERT get a 1-line intro
+                                            + structured card in BotResponse instead)
 ```
+
+Routes: `KB`, `WX`, `GEMS`, `EXPERT` (connect to a guide), `EXP` (human
+escalation), `REFUSE`. `health` reports `kb_places`, `hidden_gems`,
+`local_experts` counts.
 
 First triage command:
 

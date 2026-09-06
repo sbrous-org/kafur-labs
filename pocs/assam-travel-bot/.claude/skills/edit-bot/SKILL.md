@@ -19,16 +19,20 @@ hot-reload under `make up`; `.env` and dependency changes need `make build && ma
 
 | Want to change… | File | Notes |
 |---|---|---|
-| Routing logic (KB vs WX vs EXP vs REFUSE) | `backend/services/router.py` | it's the `system_prompt` string + `extract_json()` |
-| Final answer wording / tone / guardrails | `backend/services/synthesis.py` | `synthesize()` system prompt; also `handle_no_match()`, `handle_escalation()` |
+| Routing logic (KB / WX / GEMS / EXPERT / EXP / REFUSE) | `backend/services/router.py` | it's the `system_prompt` string + `extract_json()` |
+| Final answer wording / tone / guardrails | `backend/services/synthesis.py` | `synthesize()` system prompt; also `intro_hidden_gems()`, `intro_local_expert()`, `handle_no_match()`, `handle_escalation()` |
 | KB content (the places) | `knowledge_base/places.jsonl` | one JSON object per line; no rebuild needed (bind-mounted) |
+| Hidden-gems content | `knowledge_base/hidden_gems.jsonl` | curated offbeat spots; `gem_id`, `name`, `near`, `embedding_text`, … |
+| Local-guide directory | `knowledge_base/local_experts.jsonl` | mock profiles; `availability` is a fixed string |
 | KB search behaviour | `backend/services/knowledge_base.py` | TF-IDF; `retrieve()`, `_passes_filters()` |
+| Hidden-gems matching | `backend/services/recommendations.py` | `HiddenGems.retrieve(query, region)`, TF-IDF |
+| Expert matching | `backend/services/experts.py` | `ExpertDirectory.match(region, interests)` |
 | Weather provider / fields | `backend/services/weather.py` | currently Open-Meteo, **no API key** |
 | LLM providers + factory | `backend/services/llm_provider.py` | `mock`, `claude`, `openai`, `openrouter` |
 | Which provider + keys | `.env` (copy from `.env.example`) | `LLM_PROVIDER=` and the matching `_API_KEY` |
 | Config loading / validation | `backend/config.py` | env → `Config`; `get_llm_config()` builds the provider dict |
-| HTTP endpoints + pipeline wiring | `backend/app/main.py` | `/query`, `/health`, `/kb/places`, `/session/*` |
-| Request/response shapes | `backend/models/schemas.py` | pydantic `QueryRequest`, `BotResponse` |
+| HTTP endpoints + pipeline wiring | `backend/app/main.py` | `/query`, `/health`, `/kb/places`, `/kb/hidden-gems`, `/experts`, `/session/*` |
+| Request/response shapes | `backend/models/schemas.py` | pydantic `QueryRequest`, `BotResponse`, `HiddenGem`, `LocalExpert` |
 | Frontend (everything visual) | `frontend/index.html` | single file, inline `<style>` + `<script>`; see the `restyle-bot` skill |
 | Make targets / run flow | `Makefile` | `prereq`, `build`, `up`, `down`, `logs`, `bot-logs`, `status` |
 
@@ -58,9 +62,11 @@ scaffold — the deployed frontend is `frontend/index.html` only. Don't edit the
 
 Edit the `system_prompt` in `backend/services/router.py`. The contract the rest of the
 code depends on: the returned JSON must have `intent`, `entities` (with `place_names`,
-`season`, `activity`), `route` (a list drawn from `KB`, `WX`, `EXP`, `REFUSE`),
-`reasoning`, `confidence`. Keep `route` values exactly those four tokens — `main.py`
-branches on `"KB" in route` etc.
+`region`, `season`, `activity`, `interests`), `route` (a list drawn from `KB`, `WX`,
+`GEMS`, `EXPERT`, `EXP`, `REFUSE`), `reasoning`, `confidence`. Keep `route` values
+exactly those tokens — `main.py` branches on `"KB" in route`, `"GEMS" in route`, etc.
+`GEMS` and `EXPERT` responses return structured cards in `BotResponse.hidden_gems` /
+`.local_expert` (rendered as cards by the frontend) plus a one-line LLM intro.
 
 For `LLM_PROVIDER=mock`, also update the keyword lists in `MockProvider.invoke()`
 (`llm_provider.py`) so offline/eval runs match the new rules.
@@ -83,9 +89,10 @@ guardrails are load-bearing per `ARCHITECTURE.md` — keep them.
 
 ### Add an endpoint
 
-Add to `backend/app/main.py`, reuse the module-level `knowledge_base`, `router`,
-`weather_service`, `synthesis`, `llm_provider` singletons. Add request/response models to
-`backend/models/schemas.py`. FastAPI auto-docs at `localhost:8000/docs`.
+Add to `backend/app/main.py`, reuse the module-level `knowledge_base`, `hidden_gems`,
+`expert_directory`, `router`, `weather_service`, `synthesis`, `llm_provider` singletons.
+Add request/response models to `backend/models/schemas.py`. FastAPI auto-docs at
+`localhost:8000/docs`.
 
 ## Verify a change
 
@@ -106,7 +113,8 @@ expected routes) — that's the POC's success bar per `README.md`.
 
 ## Known doc drift (safe to fix if you touch these)
 
-- `.env.example` / `README.md` mention `OPENWEATHER_API_KEY`, but `weather.py` uses
-  Open-Meteo and needs no key.
-- `README.md` "Stack" still says OpenAI/GPT-3.5 is the LLM; default is now `mock`.
+- `.env.example` mentions `OPENWEATHER_API_KEY`, but `weather.py` uses Open-Meteo and
+  needs no key.
 - `Makefile` `prereq` doesn't offer the `mock` option in its menu.
+- `frontend/src/`, `frontend/config.js`, `frontend/package.json` are a dead React
+  scaffold; the live frontend is `frontend/index.html` only.

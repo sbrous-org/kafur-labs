@@ -17,12 +17,18 @@ from services.knowledge_base import KnowledgeBase
 from services.router import QueryRouter
 from services.weather import WeatherService
 from services.synthesis import AnswerSynthesis
+from services.recommendations import HiddenGems
+from services.experts import ExpertDirectory
 from services.llm_provider import create_llm_provider
 
 app = FastAPI(
-    title="Assam Travel Bot",
-    description="POC: Structured query-answering bot for Assam travel with KB, weather, and expert escalation.",
-    version="0.1.0"
+    title="Oxomiai — Assam Travel Bot",
+    description=(
+        "POC: structured query-answering companion for Northeast Assam. Routes to a curated "
+        "knowledge base, live weather, curated hidden gems, a local-expert directory, or human "
+        "escalation. See ARCHITECTURE.md for the target microservices design."
+    ),
+    version="0.2.0"
 )
 
 # CORS for UI frontend
@@ -48,8 +54,10 @@ print(f"✓ Using LLM: {Config.LLM_PROVIDER.upper()}")
 
 # Initialize services
 # KB path: in Docker, mounted at /app/knowledge_base; locally, at ../knowledge_base
-kb_path = Path(__file__).parent.parent / "knowledge_base" / "places.jsonl"
-knowledge_base = KnowledgeBase(str(kb_path))
+kb_dir = Path(__file__).parent.parent / "knowledge_base"
+knowledge_base = KnowledgeBase(str(kb_dir / "places.jsonl"))
+hidden_gems = HiddenGems(str(kb_dir / "hidden_gems.jsonl"))
+expert_directory = ExpertDirectory(str(kb_dir / "local_experts.jsonl"))
 router = QueryRouter(llm_provider=llm_provider)
 weather_service = WeatherService()
 synthesis = AnswerSynthesis(llm_provider=llm_provider)
@@ -63,9 +71,25 @@ async def health():
     """Health check endpoint."""
     return {
         "status": "ok",
-        "service": "assam-travel-bot",
-        "kb_places": len(knowledge_base.places)
+        "service": "oxomiai-assam-travel-bot",
+        "kb_places": len(knowledge_base.places),
+        "hidden_gems": len(hidden_gems.gems),
+        "local_experts": len(expert_directory.experts),
     }
+
+
+@app.get("/kb/hidden-gems")
+async def get_hidden_gems():
+    """List all curated hidden gems."""
+    gems = hidden_gems.get_all()
+    return {"total": len(gems), "hidden_gems": gems}
+
+
+@app.get("/experts")
+async def get_experts():
+    """List all local experts in the directory."""
+    experts = expert_directory.get_all()
+    return {"total": len(experts), "experts": experts}
 
 
 @app.get("/kb/places")
@@ -118,7 +142,32 @@ async def answer_query(request: QueryRequest) -> BotResponse:
         # Step 2: Retrieve sources based on route
         kb_results = []
         weather_data = None
+        gem_results = []
+        matched_expert = None
         sources_used = {}
+
+        region = entities.get("region") or entities.get("district") or ""
+        interests = entities.get("interests") or []
+        if isinstance(interests, str):
+            interests = [interests]
+        if entities.get("activity"):
+            interests = interests + [entities["activity"]]
+
+        if "GEMS" in route:
+            gem_results = hidden_gems.retrieve(query, region=region or None, top_k=3)
+            if gem_results:
+                sources_used["hidden_gems"] = [
+                    {"name": g["name"], "near": g.get("near"), "score": g.get("match_score", 0)}
+                    for g in gem_results
+                ]
+
+        if "EXPERT" in route:
+            matched_expert = expert_directory.match(region=region or None, interests=interests)
+            if matched_expert:
+                sources_used["local_expert"] = {
+                    "name": matched_expert["name"],
+                    "region": matched_expert["region"],
+                }
 
         if "KB" in route:
             filters = {}
@@ -144,19 +193,63 @@ async def answer_query(request: QueryRequest) -> BotResponse:
 
         if "WX" in route:
             if kb_results and kb_results[0]:
-                # Get weather for the top KB result
+                # Prefer coordinates from the matched KB place.
                 place = kb_results[0]
+                lat, lon, loc_name = place["latitude"], place["longitude"], place["site_name"]
+            else:
+                # Pure weather query for a place not in the KB — geocode the
+                # named place / region (falls back to Guwahati).
+                target = region or (entities.get("place_names") or ["Guwahati"])[0]
+                geo = weather_service.geocode(target) or weather_service.geocode("Guwahati")
+                if geo:
+                    lat, lon, loc_name = geo["latitude"], geo["longitude"], geo["name"]
+                else:
+                    lat = lon = loc_name = None
+
+            if lat is not None:
                 weather_data = weather_service.get_weather(
-                    latitude=place["latitude"],
-                    longitude=place["longitude"],
-                    place_name=place["site_name"]
+                    latitude=lat, longitude=lon, place_name=loc_name
                 )
                 if weather_data:
                     sources_used["weather_location"] = weather_data["location"]
 
         # Step 3: Synthesize answer
+        gems_payload = None
+        expert_payload = None
+
         if "REFUSE" in route:
             answer = synthesis.handle_no_match(query)
+        elif "GEMS" in route:
+            answer = synthesis.intro_hidden_gems(query, gem_results)
+            gems_payload = [
+                {
+                    "name": g["name"],
+                    "near": g.get("near"),
+                    "category": g.get("category"),
+                    "short_description": g["short_description"],
+                    "why_hidden": g.get("why_hidden"),
+                    "how_to_reach": g.get("how_to_reach"),
+                    "best_time": g.get("best_time"),
+                    "tag": g.get("tag", "Local pick"),
+                }
+                for g in gem_results
+            ] or None
+        elif "EXPERT" in route:
+            answer = synthesis.intro_local_expert(query, matched_expert)
+            if matched_expert:
+                expert_payload = {
+                    "name": matched_expert["name"],
+                    "region": matched_expert["region"],
+                    "specialties": matched_expert.get("specialties", []),
+                    "languages": matched_expert.get("languages", []),
+                    "years_experience": matched_expert.get("years_experience", 0),
+                    "bio": matched_expert.get("bio"),
+                    "availability_label": matched_expert.get("availability_label", "By appointment"),
+                    "avg_response_minutes": matched_expert.get("avg_response_minutes"),
+                    "session_modes": matched_expert.get("session_modes", []),
+                    "photo_emoji": matched_expert.get("photo_emoji"),
+                    "verification_status": matched_expert.get("verification_status", "verified"),
+                }
         elif "EXP" in route:
             answer = synthesis.handle_escalation(
                 query,
@@ -179,7 +272,9 @@ async def answer_query(request: QueryRequest) -> BotResponse:
             requires_expert_escalation="EXP" in route,
             confidence=routing_result.get("confidence", 0.5),
             session_id=session_id,
-            timestamp=datetime.utcnow().isoformat() + "Z"
+            timestamp=datetime.utcnow().isoformat() + "Z",
+            hidden_gems=gems_payload,
+            local_expert=expert_payload,
         )
 
         # Store in session history

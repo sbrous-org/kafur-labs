@@ -90,6 +90,51 @@ Provide a natural, helpful answer using only the sources above. Be specific (cit
             print(f"Synthesis error: {e}")
             return "Sorry, I'm having trouble reaching my answer engine right now. Please try again in a moment."
 
+    def intro_hidden_gems(self, query: str, gems: List[Dict[str, Any]]) -> str:
+        """
+        One-line intro for a hidden-gems card. The gem data itself is returned
+        verbatim in the response — the LLM only frames it, and must not add
+        places that aren't in the provided list.
+        """
+        if not gems:
+            return (
+                "I don't have curated hidden gems for that area yet — I keep this list "
+                "small and local, so I'd rather say so than pad it with the usual stops."
+            )
+
+        names = ", ".join(g["name"] for g in gems)
+        system_prompt = (
+            "You are Oxomiai, a Northeast Assam travel companion. Write ONE short, warm "
+            "sentence introducing a list of hidden-gem spots. Do not list the spots "
+            "yourself, do not invent any, do not add detail beyond framing. Under 25 words."
+        )
+        user_message = f"Traveller asked: {query}\nSpots being shown: {names}"
+        try:
+            return self.llm.invoke(system_prompt, user_message, max_tokens=80, temperature=0.6).strip()
+        except Exception as e:
+            print(f"Gems intro error: {e}")
+            return "Beyond the guidebook stops — here's what most travellers miss:"
+
+    def intro_local_expert(self, query: str, expert: Dict[str, Any]) -> str:
+        """One-line intro for a local-expert card. Never invents guide details."""
+        if not expert:
+            return (
+                "I couldn't find an available local guide for that area right now. "
+                "Try again a little later, or ask me to widen the search."
+            )
+        system_prompt = (
+            "You are Oxomiai, a Northeast Assam travel companion. Write ONE short, warm "
+            "sentence saying you're connecting the traveller with a verified local guide. "
+            "Do not state the guide's name, experience, or availability — a card below does "
+            "that. Under 22 words."
+        )
+        try:
+            return self.llm.invoke(system_prompt, f"Traveller asked: {query}",
+                                   max_tokens=70, temperature=0.6).strip()
+        except Exception as e:
+            print(f"Expert intro error: {e}")
+            return "Of course — here's a verified local guide who can help, live."
+
     def handle_no_match(self, query: str) -> str:
         """Handle case where query doesn't match KB."""
         return (

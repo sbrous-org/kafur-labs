@@ -1,0 +1,81 @@
+flowchart TB
+  subgraph CLIENT["Client"]
+    A["Mobile / Web Chat UI"]
+  end
+
+  A --> GW["API Gateway / BFF"]
+
+  subgraph CORE["Core Microservices"]
+    USERSVC["User & Auth Service"]
+    CO["Conversation Orchestrator"]
+    LLM["LLM Gateway (Claude API)"]
+    ITIN["Itinerary Service"]
+    DEST["Destination & Content Service"]
+    GEMS["Hidden Gems / Recommendation Service"]
+    EXPERT["Local Expert Service"]
+    BOOK["Booking & Scheduling Service"]
+    VIDEO["Video Call Service"]
+    NOTIF["Notification Service"]
+    SEARCH["Search Service"]
+    MEDIA["Media / Asset Service"]
+    PAY["Payment Service"]
+    ANALYTICS["Analytics Service"]
+  end
+
+  GW --> USERSVC
+  GW --> CO
+  CO --> LLM
+  CO --> ITIN
+  CO --> GEMS
+  CO --> EXPERT
+  CO --> SEARCH
+  ITIN --> DEST
+  GEMS --> DEST
+  EXPERT --> BOOK
+  BOOK --> NOTIF
+  BOOK --> VIDEO
+  BOOK --> PAY
+  CO --> ANALYTICS
+
+  subgraph DATA["Data Layer"]
+    PG[("PostgreSQL: users, bookings, guides")]
+    MONGO[("MongoDB: itineraries, content")]
+    REDIS[("Redis: session / cache")]
+    VDB[("Vector DB: embeddings / RAG")]
+    S3[("Object Storage: media / CDN")]
+  end
+
+  USERSVC --> PG
+  BOOK --> PG
+  EXPERT --> PG
+  ITIN --> MONGO
+  DEST --> MONGO
+  GEMS --> VDB
+  LLM --> VDB
+  CO --> REDIS
+  MEDIA --> S3
+
+  subgraph ASYNC["Async Backbone"]
+    BUS[["Kafka / RabbitMQ Event Bus"]]
+  end
+
+  BOOK -.-> BUS
+  NOTIF -.-> BUS
+  ANALYTICS -.-> BUS
+  BUS -.-> NOTIF
+
+  subgraph EXTERNAL["External Providers"]
+    CLAUDE["Anthropic Claude API"]
+    MAPS["Maps / Geo API"]
+    WEATHER["Weather / Season API"]
+    VIDEOSDK["Video SDK (Agora / Twilio)"]
+    SMS["SMS / Email (Twilio / SendGrid)"]
+    PAYGW["Payment Gateway (Razorpay / Stripe)"]
+  end
+
+  LLM --> CLAUDE
+  DEST --> MAPS
+  DEST --> WEATHER
+  VIDEO --> VIDEOSDK
+  NOTIF --> SMS
+  PAY --> PAYGW

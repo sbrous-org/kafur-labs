@@ -1,113 +1,123 @@
 ---
 name: restyle-bot
 description: >
-  Change the look of the assam-travel-bot frontend: colours, fonts, spacing,
-  the header, the chat bubbles, the trip-plan / weather / place cards, the
-  sidebar, light/dark theming, or the responsive layout. Use for "restyle the
-  UI", "change the colour scheme", "make it look like X", "adjust the card
-  design", "tweak the layout / spacing / fonts", or any visual/CSS change to
-  this POC. Not for backend answer content — that's the `edit-bot` skill.
+  Change the look of the assam-travel-bot ("Oxomiai") frontend: colours, fonts,
+  spacing, the sidebar/rail, the chat bubbles, the trip-plan / weather / place /
+  hidden-gems / local-expert cards, light/dark theming, or the responsive
+  layout. Use for "restyle the UI", "change the colour scheme", "make it look
+  like X", "adjust the card design", "tweak the layout / spacing / fonts", or
+  any visual/CSS change to this POC. Not for backend answer content — that's the
+  `edit-bot` skill.
 ---
 
-# Restyling the Assam travel bot frontend
+# Restyling the Oxomiai frontend
 
 The **entire** frontend is one file: `pocs/assam-travel-bot/frontend/index.html`
-(~747 lines). Inline `<style>` in `<head>`, markup in `<body>`, inline `<script>` at the
-bottom. No build step, no framework. (`frontend/src/`, `config.js`, `package.json` are a
-dead React scaffold — ignore them.)
+(~1400 lines). Inline `<style>` in `<head>`, markup in `<body>`, inline
+`<script>` before a `<template id="welcomeTemplate">` at the end. No build step,
+no framework. (`frontend/src/`, `config.js`, `package.json` are a dead React
+scaffold — ignore them.)
 
-The container serves this file verbatim via `python -m http.server 3000`. To see changes:
-just reload `http://localhost:3000` — no rebuild. (If running `make up`, the `web`
-container only re-copies on `make build`; for fast iteration open the file directly in a
-browser, or `cd frontend && python3 -m http.server 3000`.)
+The `web` container serves this file verbatim via `python -m http.server 3000`.
+To see changes: reload `http://localhost:3000` — but the container only
+re-copies the file on `docker compose build`. For fast iteration open the file
+directly in a browser, or `cd frontend && python3 -m http.server 3000`. The page
+calls the backend at a hardcoded `const API = 'http://localhost:8000'` (top of
+the `<script>`).
 
 ## The design system (CSS custom properties)
 
-All colour/shape decisions are tokens on `:root` (around line 9). Change the palette here
-and it propagates everywhere:
+All colour/shape decisions are tokens on `:root` (starts ~line 12). Change the
+palette here and it propagates. Current palette is warm Assam-inspired
+(dark-green + terracotta + river-blue + gold on cream):
 
 ```
---tea / --tea-light        deep green   — headings, user bubble, primary accents
---terracotta / --*-light   burnt orange — buttons, section icons, "gamosa" strip
---muga                     gold          — (Assam silk) accent, currently light use
---river / --river-light    slate blue    — tertiary accent
---cream                    page background
---panel                    card/surface background
---ink / --ink-soft         text / muted text
---border                   hairlines
---radius                   global corner radius (10px)
+--bg / --surface / --surface-2 / --surface-3   page + card grounds
+--text / --text-soft / --text-faint            text ramp
+--border / --border-strong                     hairlines
+--brand / --brand-bright / --brand-ink / --brand-tint    deep green — logo, avatars, KB accents
+--accent / --accent-bright / --accent-tint     terracotta — send button, expert card, EXP tag
+--gold                                          Assam-silk gold — hidden-gems accents
+--sky / --sky-2 / --sky-tint                    river-blue — user bubble, weather card
+--on-brand                                      text on brand/accent fills (cream)
+--shadow-xs…-lg, --r-xs…-xl, --font, --display, --ease   elevation, radii, fonts, easing
 ```
 
-Fonts: `Fraunces` (serif, headings) + `Work Sans` (body), loaded from Google Fonts on
-line 7. Swap the `<link>` and the two `font-family` declarations (`body`, and the
-`h1`/`h2`/`h3` / `.trip-plan-head` rules).
+Fonts: `Fraunces` (`--display`, headings/card titles) + `Inter` (`--font`,
+body), from Google Fonts (`<link>` ~line 9).
 
 ## Theming (light / dark)
 
-Three-state, already wired (lines ~25–45):
-- bare `:root` = full light palette (the source of truth).
-- `@media (prefers-color-scheme: dark)` guarded by `:root:not([data-theme="light"])` =
-  dark overrides.
-- `:root[data-theme="dark"]` = same overrides so an explicit toggle wins.
+Three-state, already wired:
+- bare `:root` = full light palette (source of truth).
+- `@media (prefers-color-scheme: dark)` guarded by `:root:not([data-theme="light"])`.
+- `:root[data-theme="dark"]` = same overrides so the explicit toggle wins.
 
-**Rule:** every token gets its real value on bare `:root`. In the dark blocks, only
-*re-declare* tokens that change. Never define a colour only inside a media/attribute block.
-There is currently no visible theme toggle — `data-theme` would have to be set on `<html>`
-by a script if you want one.
+The two dark blocks are identical value sets — **edit both**. There is a working
+theme toggle (`toggleTheme()`, persisted to `localStorage['atp-theme']`); the
+sun/moon icon buttons are in `.rail-foot` and `.topbar`.
 
-## Markup regions (in `<body>`, from line ~488)
+**Rule:** every token gets its real value on bare `:root`; dark blocks only
+re-declare what changes. Never define a colour only inside a media/attribute block.
+
+## Markup regions (in `<body>`)
 
 | Region | Class | What it is |
 |---|---|---|
-| Header | `.header` / `.header-top` / `.gamosa-strip` | title, tagline, woven-stripe motif |
-| Layout | `.app` > `.main` (CSS grid) | 2-col: chat + sidebar; collapses to 1-col < 780px |
-| Chat | `.chat-panel` > `.messages` | scrolling message list |
-| Empty state | `.welcome` | icon + "Plan your journey" |
-| Quick actions | `.chip-strip` (mobile) / `.sidebar` `.sb-section` `.sb-btn` (desktop) | canned queries; keep both in sync |
-| Input | `.input-bar` input + button | |
-| Response cards | `.trip-plan`, `.weather-card`, `.place-card`, `.bubble.bot`, `.bubble.error` | see below |
+| Sidebar | `.rail` > `.brand`, `.new-chat`, `.rail-group` (`h3` + `.rail-btn`), `.rail-foot` | brand, new-chat, grouped quick prompts, status + theme toggle |
+| Mobile top bar | `.topbar` | shown < 880px when `.rail` hides |
+| Chat column | `.chat` > `.thread` > `.thread-inner` (`#messages`) | scrolling turn list |
+| Welcome / empty state | `.welcome` (`.eyebrow`, `h1`, `.lede`, `.suggestions` > `.sugg`) | duplicated in `<template id="welcomeTemplate">` for "new conversation" — **keep both in sync** |
+| Turn | `.turn` (`.user` / `.bot`) > `.avatar` + `.turn-body` | `.turn.user` reverses row; user text in `.bubble` |
+| Composer | `.composer` > `.composer-inner` > `.field` (textarea + `.send`) | |
+| Response cards | `.card` + `.place-card` / `.weather-card` / `.trip-card` / `.gems-card` / `.expert-card`; route tags `.tags` > `.tag.kb/.wx/.gems/.expert/.exp` | see below |
 
 ## Response cards are built in JS, not just CSS
 
-`renderResponse(text, routeTaken)` (line ~646) picks a renderer by content/route:
+`renderResponse(data)` (~line 1200) receives the whole `/query` JSON and picks a
+renderer:
 
-- day headers present (`DAY_HEADER_RE`) → `renderTripPlan()` → `.trip-plan` with
-  `.trip-plan-head`, `.trip-preamble`, `.days` > `.day-card` (`.day-num`, `.day-title`,
-  `.activity`).
-- route includes `WX` → `renderWeatherResponse()` → `.weather-card` (`.head` + `.body`).
-- route includes `KB` → `renderPlaceResponse()` → `.place-card` (`.head` + `.body`).
-- else → `addMessage('bot', …)` → plain `.bubble.bot`.
+- `data.hidden_gems` (array) → `renderGems()` → `.card.gems-card` > `.gems-list` > `.gem` (`.g-ico`, `.g-name`, `.g-near`, `.g-desc`, `.g-meta`, `.g-pick`).
+- `data.local_expert` (object) → `renderExpert()` → `.card.expert-card` > `.expert-body` (`.expert-top`, `.expert-photo`, `.expert-name`, `.expert-avail`, `.expert-specialties`, `.expert-connect`).
+- else, day headers present (`DAY_HEADER_RE`) → `renderTripPlan()` → `.card.trip-card` > `.days` > `.day` (`.num`, `.day-title`, `.act`).
+- else route includes `WX` → `renderWeather()` → `.card.weather-card`.
+- else route includes `KB` → `renderPlace()` → `.card.place-card`.
+- else → `msgNode()` → plain `.msg`.
 
-So restyling a card = edit its CSS block **and**, if you change class names or structure,
-the matching `render*` function's template string. The inline `<svg>` icons live in those
-template strings and in the sidebar markup — edit them in place (they use
-`stroke="currentColor"`, so colour follows the surrounding text/`--terracotta`).
+For GEMS/EXPERT the LLM writes only a one-line intro (`data.answer`) rendered as
+a `.msg` above the card; the card data itself is structured and never
+paraphrased. Route → tag mapping is `ROUTE_META`.
 
-Text formatting: `mdToHtml()` (line ~639) does escape-then-minimal-markdown (`**bold**`,
-strips list bullets). Keep using it for any user/LLM text you inject — it's the XSS guard.
+So restyling a card = edit its CSS block **and**, if you change class names or
+structure, the matching `render*` template string. Inline `<svg>` icons live in
+those template strings (`ICON_*` consts) and the rail markup — they use
+`stroke="currentColor"`.
+
+Text formatting: `mdToHtml()` / `escapeHtml()` — escape-then-minimal-markdown.
+Keep using them for any user/LLM text you inject (XSS guard).
 
 ## Recipes
 
-- **New colour scheme:** edit the `:root` tokens + the dark overrides. Don't hunt for
-  hex values in rules — there shouldn't be any outside `:root` except a few `#fff`/`#fdfaf3`
-  on dark accent backgrounds and `color-mix()` in `.bubble.error`.
-- **Different vibe (fonts + shape):** swap the Google Fonts `<link>`, the `font-family`
-  rules, and `--radius`.
-- **Restyle a card:** find its `/* --- … card --- */` comment block in `<style>`; adjust.
-  Structure changes → also update the `render*` template.
-- **Change quick prompts:** edit both `.chip-strip` buttons (line ~513) and `.sidebar`
-  `.sb-btn`s (line ~532) — `onclick="quickSend('…')"`.
-- **Layout width / columns:** `.app` `max-width` (line ~60) and `.main`
-  `grid-template-columns` (line ~117); responsive breakpoint at `@media (max-width: 780px)`
-  (line ~472) — per the comment there, keep responsive overrides *after* the base rules.
-- **Header motif:** `.gamosa-strip` is a pure-CSS `repeating-linear-gradient`; change
-  angle/colours/stripe widths there.
+- **New colour scheme:** edit the `:root` tokens + both dark blocks. No hex
+  values should live in rules (a few `#fff`-ish on-fill colours and `color-mix()`
+  aside).
+- **Different vibe (fonts + shape):** swap the Google Fonts `<link>`, `--font` /
+  `--display`, and the `--r-*` radii.
+- **Change quick prompts:** edit the `.rail-group` `.rail-btn`s **and** the
+  `.suggestions` `.sugg`s in *both* the inline `.welcome` and
+  `#welcomeTemplate` — all use `onclick="quickSend('…')"`.
+- **Restyle a card:** find its `/* --- */` block in `<style>`; adjust. Structure
+  change → also update the `render*` template.
+- **Layout width / columns:** `.app` `grid-template-columns` + `max-width`;
+  responsive breakpoint `@media (max-width: 880px)`.
 
 ## Before finishing
 
-- Reload at a narrow width (< 780px) — sidebar hides, `.chip-strip` shows; check nothing
-  overflows horizontally (`.messages` and cards should wrap/scroll internally).
-- Check both themes (OS dark mode toggle).
-- Send one of each: a trip query ("Plan a 2-day Assam trip"), a weather query, a place
-  query, and something out-of-scope — to see all four renderers.
-- If you only want a visual mock (not the live app), consider the `design` skill instead.
+- Reload < 880px — `.rail` hides, `.topbar` shows; nothing should scroll
+  horizontally (cards wrap/scroll internally).
+- Check both themes (toggle button + OS dark mode).
+- Send one of each: trip query, weather query, place query, "show me hidden gems
+  near Majuli", "talk to a local guide near Majuli", and something out of scope
+  — exercises every renderer. With `LLM_PROVIDER=mock` the prose is canned but
+  routing + cards are real.
+- Visual-mock only (not the live app)? Use the `design` skill instead.

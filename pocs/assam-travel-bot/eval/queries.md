@@ -1,6 +1,12 @@
 # Eval queries
 
-Expected route: `KB` (knowledge base) · `WX` (weather) · `EXP` (expert escalation) · `KB+WX` (compound) · `REFUSE/CLARIFY` (correctly declines or asks a follow-up instead of guessing).
+Expected route: `KB` (knowledge base) · `WX` (weather) · `GEMS` (curated hidden-gems layer) · `EXPERT` (connect to a verified local guide) · `EXP` (human escalation for hyperlocal/booking/safety) · `KB+WX` (compound) · `REFUSE/CLARIFY` (correctly declines or asks a follow-up instead of guessing).
+
+> `GEMS` vs `EXP`: "show me offbeat spots near X" is `GEMS` (served from the curated
+> `hidden_gems.jsonl`). "tell me about a place written up nowhere" is still `EXP`/`REFUSE`
+> — the bot must not fabricate a gem that isn't in the curated file.
+> `EXPERT` vs `EXP`: "connect me to someone who lives there" is `EXPERT` (returns a guide
+> card). "can you arrange a homestay / is the road passable right now" is `EXP`.
 
 ## Pure place-info (KB)
 
@@ -76,3 +82,25 @@ Expected route: `KB` (knowledge base) · `WX` (weather) · `EXP` (expert escalat
     Good answer: treats turn 2 as a refinement (distance constraint) on the same intent, not a fresh unrelated query.
 30. **"I'm planning a trip in monsoon — is that a bad idea overall for the underrated spots you know about?"**
     Good answer: a broad, KB-spanning seasonal question — tests whether the bot can generalize across multiple entries' season fields into one coherent answer instead of only handling single-place questions.
+
+## Hidden gems (GEMS)
+
+31. **"Show me hidden gems near Majuli — stuff the guidebooks don't cover."**
+    Good answer: returns 2–3 entries from the curated hidden-gems layer (Chunchali Beel, Salmara Sandbar, Kamalabari Pottery Lane), each with the "why it's missed" hook. Doesn't just re-list the famous Satras.
+32. **"Anything offbeat to do around the Jorhat tea gardens?"**
+    Good answer: `GEMS`, region-filtered to Jorhat (Dhodar Ali tea shacks, Hoollongapar dawn trail) — tests region filtering, not just similarity.
+33. **"I've done Kaziranga and Majuli already — what would a local actually recommend that I won't find on a blog?"**
+    Good answer: `GEMS`; the framing is "what locals know," which is exactly the differentiator. Should not fall back to a generic KB "top places" answer.
+34. **"Give me a hidden birding spot in Assam."**
+    Good answer: `GEMS` by interest (birding) — Chunchali Beel / Hoollongapar surface; the match is on activity, not place name.
+
+## Local expert (EXPERT)
+
+35. **"Can I talk to someone who actually lives in Majuli before I book anything?"**
+    Good answer: `EXPERT` — returns one available verified guide for the Majuli region (Rupam Doley), as a card, with a one-line intro that doesn't over-promise. Not `EXP` (no transaction yet), not a KB answer.
+36. **"I'd rather video-call a real guide than read another article — is that possible?"**
+    Good answer: `EXPERT`; explicit ask for a person + a live channel. The response is clear that booking/video isn't wired up in the POC.
+37. **"Connect me with a Kaziranga wildlife expert."**
+    Good answer: `EXPERT`, matched by region + specialty (Hemanta Pegu) — tests specialty matching in the directory.
+38. Multi-turn: **Turn 1:** "Plan me 3 days around Sivasagar." → **Turn 2:** "Actually, can I just talk to a local for this one?"
+    Good answer: turn 2 → `EXPERT`, region carried from context (Sivasagar → Diana Khound), not a fresh region-less match.
