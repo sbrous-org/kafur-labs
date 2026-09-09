@@ -1,0 +1,112 @@
+[
+  {
+    "id": "kaziranga",
+    "name": "Kaziranga National Park",
+    "aliases": ["kaziranga"],
+    "district": "Golaghat",
+    "type": ["wildlife", "nature"],
+    "best_time": "November to April",
+    "description": "UNESCO site known for one-horned rhinos.",
+    "things_to_do": ["Jeep safari", "Elephant safari", "Bird watching"],
+    "avg_days_needed": 2
+  },
+  {
+    "id": "majuli",
+    "name": "Majuli Island",
+    "aliases": ["majuli"],
+    "district": "Majuli",
+    "type": ["culture", "nature"],
+    "best_time": "October to March",
+    "description": "World's largest river island, Vaishnavite culture hub.",
+    "things_to_do": ["Visit Satras (monasteries)", "Mask-making workshop", "River cruise"],
+    "avg_days_needed": 2
+  },
+  {
+    "id": "sivasagar",
+    "name": "Sivasagar",
+    "aliases": ["sivasagar", "sibsagar"],
+    "district": "Sivasagar",
+    "type": ["culture", "history"],
+    "best_time": "October to March",
+    "description": "Former Ahom kingdom capital, dotted with palaces and temples.",
+    "things_to_do": ["Talatal Ghar", "Rang Ghar", "Sivasagar Tank"],
+    "avg_days_needed": 1
+  },
+  {
+    "id": "tezpur",
+    "name": "Tezpur",
+    "aliases": ["tezpur"],
+    "district": "Sonitpur",
+    "type": ["culture", "nature"],
+    "best_time": "October to April",
+    "description": "Riverside town known as the 'city of eternal love', with ruins and gardens.",
+    "things_to_do": ["Agnigarh Hill", "Cole Park", "Bamuni Hills ruins"],
+    "avg_days_needed": 1
+  },
+  {
+    "id": "guwahati",
+    "name": "Guwahati",
+    "aliases": ["guwahati", "gauhati"],
+    "district": "Kamrup Metropolitan",
+    "type": ["culture", "city"],
+    "best_time": "October to March",
+    "description": "Gateway to the Northeast, on the banks of the Brahmaputra.",
+    "things_to_do": ["Brahmaputra river cruise", "Umananda Island", "Assam State Zoo"],
+    "avg_days_needed": 2
+  },
+  {
+    "id": "kamakhya",
+    "name": "Kamakhya Temple",
+    "aliases": ["kamakhya"],
+    "district": "Kamrup Metropolitan",
+    "type": ["culture", "spiritual"],
+    "best_time": "October to March",
+    "description": "One of the Shakti Peethas, atop Nilachal Hill overlooking Guwahati.",
+    "things_to_do": ["Temple darshan", "Nilachal Hill viewpoint", "Ambubachi Mela (June)"],
+    "avg_days_needed": 1
+  },
+  {
+    "id": "hajo",
+    "name": "Hajo",
+    "aliases": ["hajo"],
+    "district": "Kamrup",
+    "type": ["culture", "spiritual"],
+    "best_time": "October to March",
+    "description": "Multi-faith pilgrimage town sacred to Hindus, Buddhists, and Muslims.",
+    "things_to_do": ["Hayagriva Madhava Temple", "Poa Mecca", "Brass and bell metal crafts"],
+    "avg_days_needed": 1
+  },
+  {
+    "id": "manas",
+    "name": "Manas National Park",
+    "aliases": ["manas", "manas national park", "manas np"],
+    "district": "Chirang",
+    "type": ["wildlife", "nature"],
+    "best_time": "November to April",
+    "description": "UNESCO World Heritage Site and tiger reserve on the Bhutan foothills.",
+    "things_to_do": ["Jeep safari", "River rafting on the Manas", "Wildlife spotting"],
+    "avg_days_needed": 2
+  },
+  {
+    "id": "jorhat",
+    "name": "Jorhat",
+    "aliases": ["jorhat"],
+    "district": "Jorhat",
+    "type": ["culture", "nature"],
+    "best_time": "October to March",
+    "description": "Tea capital of Assam and gateway to Majuli.",
+    "things_to_do": ["Tea garden visits", "Tocklai Tea Research Institute", "Raja Maidam"],
+    "avg_days_needed": 1
+  },
+  {
+    "id": "dibrugarh",
+    "name": "Dibrugarh",
+    "aliases": ["dibrugarh"],
+    "district": "Dibrugarh",
+    "type": ["culture", "nature"],
+    "best_time": "October to April",
+    "description": "Tea city on the Brahmaputra, upper Assam's commercial hub.",
+    "things_to_do": ["Tea estate tours", "Chowkhamsali Namdong Buddhist Temple", "Brahmaputra riverside walk"],
+    "avg_days_needed": 1
+  }
+]
