@@ -568,6 +568,21 @@
         .tag.gems   { background: color-mix(in srgb, var(--gold) 20%, transparent); color: color-mix(in srgb, var(--gold) 78%, var(--text)); }
         .tag.expert { background: var(--accent-tint); color: var(--accent); }
 
+        .suggestions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+        .suggestion-chip {
+            font: inherit;
+            font-size: 12.5px;
+            font-weight: 550;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface-2);
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .suggestion-chip:hover { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); }
+
         /* ============ Rich cards ============ */
         .card {
             border: 1px solid var(--border);
@@ -997,7 +1012,7 @@
     </div>
 
     <script>
-        const API = 'http://localhost:8000';
+        const API = 'http://' + window.location.hostname + ':8000';
         const messages = document.getElementById('messages');
         const thread = document.getElementById('thread');
         const query = document.getElementById('query');
@@ -1160,16 +1175,34 @@
 
         function mdToHtml(raw) {
             const esc = escapeHtml((raw || '').trim());
-            const blocks = esc.split(/\n{2,}/);
-            return blocks.map(block => {
-                const lines = block.split('\n');
-                if (lines.length && lines.every(l => /^\s*[-*•]\s+/.test(l))) {
-                    return '<ul>' + lines.map(l => '<li>' + inlineMd(l.replace(/^\s*[-*•]\s+/, '')) + '</li>').join('') + '</ul>';
-                }
-                const h = block.match(/^\s*#{1,4}\s+(.*)$/);
-                if (h) return '<h4>' + inlineMd(h[1]) + '</h4>';
-                return '<p>' + lines.map(inlineMd).join('<br>') + '</p>';
-            }).join('');
+            const lines = esc.split('\n');
+            const out = [];
+            let para = [];
+            let list = [];
+
+            function flushPara() {
+                if (para.length) { out.push('<p>' + para.map(inlineMd).join('<br>') + '</p>'); para = []; }
+            }
+            function flushList() {
+                if (list.length) { out.push('<ul>' + list.map(l => '<li>' + inlineMd(l) + '</li>').join('') + '</ul>'); list = []; }
+            }
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) { flushPara(); flushList(); return; }
+
+                const h = trimmed.match(/^#{1,4}\s+(.*)$/);
+                if (h) { flushPara(); flushList(); out.push('<h4>' + inlineMd(h[1]) + '</h4>'); return; }
+
+                const li = trimmed.match(/^[-*•]\s+(.*)$/);
+                if (li) { flushPara(); list.push(li[1]); return; }
+
+                flushList();
+                para.push(line);
+            });
+            flushPara();
+            flushList();
+            return out.join('');
         }
 
         function msgNode(text, extraClass) {
@@ -1233,9 +1266,27 @@
                 }
             }
 
+            const suggestions = suggestionsNode(data.suggestions);
+            if (suggestions) frag.appendChild(suggestions);
+
             const holder = document.createElement('div');
             holder.appendChild(frag);
             return holder;
+        }
+
+        function suggestionsNode(suggestions) {
+            if (!Array.isArray(suggestions) || !suggestions.length) return null;
+            const wrap = document.createElement('div');
+            wrap.className = 'suggestions';
+            suggestions.forEach(q => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'suggestion-chip';
+                btn.textContent = q;
+                btn.addEventListener('click', () => quickSend(q));
+                wrap.appendChild(btn);
+            });
+            return wrap;
         }
 
         function cardHead(iconSvg, title, cls, trailingHtml) {
