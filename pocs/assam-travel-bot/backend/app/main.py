@@ -65,6 +65,47 @@ synthesis = AnswerSynthesis(llm_provider=llm_provider)
 # Session store (POC: in-memory, not persistent)
 sessions = {}
 
+DEFAULT_SUGGESTIONS = [
+    "Plan a 3-day trip in Assam",
+    "Hidden gems near Majuli",
+    "Talk to a local guide",
+    "Weather in Guwahati this week",
+]
+
+
+def build_suggestions(route, kb_results, gem_results, matched_expert, weather_data) -> List[str]:
+    """Derive 2-3 follow-up chips from what was just retrieved — no extra LLM call."""
+    suggestions: List[str] = []
+
+    if "KB" in route and kb_results:
+        place = kb_results[0]["site_name"]
+        suggestions += [
+            f"What's the weather like at {place}?",
+            f"Any hidden gems near {place}?",
+            f"Talk to a local guide near {place}",
+        ]
+    elif "GEMS" in route and gem_results:
+        gem = gem_results[0]
+        near = gem.get("near")
+        suggestions.append(f"Tell me more about {gem['name']}")
+        if near:
+            suggestions += [f"Talk to a local guide near {near}", f"Weather in {near}"]
+    elif "EXPERT" in route and matched_expert:
+        region = matched_expert.get("region")
+        suggestions.append(f"What can {matched_expert['name']} help with?")
+        if region:
+            suggestions += [f"Hidden gems near {region}", f"Weather in {region}"]
+    elif "WX" in route and weather_data:
+        loc = weather_data.get("location")
+        if loc:
+            suggestions += [
+                f"Best time to visit {loc}",
+                f"Things to do near {loc}",
+                f"Hidden gems near {loc}",
+            ]
+
+    return suggestions[:3] or DEFAULT_SUGGESTIONS
+
 
 @app.get("/health")
 async def health():
@@ -275,6 +316,7 @@ async def answer_query(request: QueryRequest) -> BotResponse:
             timestamp=datetime.utcnow().isoformat() + "Z",
             hidden_gems=gems_payload,
             local_expert=expert_payload,
+            suggestions=build_suggestions(route, kb_results, gem_results, matched_expert, weather_data),
         )
 
         # Store in session history

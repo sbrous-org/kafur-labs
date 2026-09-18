@@ -101,3 +101,4 @@ class BotResponse(BaseModel):
     # structured data directly — it is never paraphrased by the LLM.
     hidden_gems: Optional[List[HiddenGem]] = None
     local_expert: Optional[LocalExpert] = None
+    suggestions: List[str] = []
