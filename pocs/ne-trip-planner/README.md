@@ -51,8 +51,9 @@ Dev without Docker: Postgres 16 + pgvector, then `pip install -r backend/require
 
 ## Verified vs not
 
-- **Verified here**: 14 automated tests against a real Postgres 16 + pgvector (create/join/cap, auth, real-time fan-out between two sockets, streaming, citations, plan edits, `//`, reconnect, permit grounding, unknown-topic refusal, OpenAI-compatible adapter against a fake streaming server); UI driven in headless Chromium with a desktop and a phone-sized browser in one session (screenshots in `design/screens/`).
-- **Not verified**: `docker compose up` itself (no Docker daemon in the build sandbox — compose file validates with `docker compose config`); a real LLM (Ollama / hosted) — only the mock and a fake OpenAI-compatible server were exercised; live weather (Open-Meteo unreachable from the sandbox, degrades silently); multi-instance fan-out (designed for, not run).
+- **Verified (clean state, no `.env`)**: `docker compose up --build` builds the image from the pinned `requirements.txt`, starts `pgvector/pgvector:pg16` + the app, both reach *healthy*, the KB ingests (40 new + 12 Oxomiai entries), and a desktop and a phone-sized headless Chromium complete a full session (create, join by code, chat, bot reply with citations, shared plan visible to both) with no console errors. The 14 automated tests also pass on the pinned versions (`make test`) against a real Postgres 16 + pgvector.
+- **Environment caveat**: in the build sandbox pip inside the container could not verify TLS because the sandbox proxy re-signs traffic with its own CA; the test build injected that CA as a build context. On a normal network the unmodified `Dockerfile` is used. If *your* network inspects TLS, add your CA the same way (`PIP_CERT`) or build behind your proxy settings.
+- **Not verified**: the `ollama` and `litellm` profiles and any real LLM (only the offline mock and a fake OpenAI-compatible server were exercised); live weather (Open-Meteo unreachable from the sandbox, degrades silently); multi-instance fan-out (designed for, not run).
 - **Content caveat**: the 40 new KB entries are general-knowledge drafts for review, not verified sources. Permit/season entries are flagged `high_risk` and shown as "unverified" in the UI.
 
 ## Not built yet
