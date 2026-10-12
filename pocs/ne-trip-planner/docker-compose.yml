@@ -1,0 +1,50 @@
+# Reuses stock open-source images wherever possible:
+#   db      -> pgvector/pgvector:pg16        (Postgres + pgvector, sessions + messages + KB + LISTEN/NOTIFY fan-out)
+#   ollama  -> ollama/ollama                 (optional: self-hosted small LLM + embeddings)   --profile ollama
+#   litellm -> ghcr.io/berriai/litellm       (optional: gateway to Anthropic/Gemini/Bedrock/…) --profile litellm
+# Only `app` is built from this repo.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: netrip
+      POSTGRES_DB: netrip
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-netrip}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netrip"]
+      interval: 3s
+      retries: 20
+
+  app:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    env_file: [{ path: .env, required: false }]
+    environment:
+      DATABASE_URL: postgresql://netrip:${POSTGRES_PASSWORD:-netrip}@db:5432/netrip
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["8000:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')"]
+      interval: 10s
+      retries: 6
+
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:latest
+    volumes: [ollama:/root/.ollama]
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 4; ollama pull ${LLM_MODEL:-qwen2.5:1.5b-instruct}; if [ \"$$EMBED_PROVIDER\" = openai ]; then ollama pull ${EMBED_MODEL:-nomic-embed-text}; fi; wait"]
+    environment:
+      EMBED_PROVIDER: ${EMBED_PROVIDER:-hash}
+    ports: ["11434:11434"]
+
+  litellm:
+    profiles: ["litellm"]
+    image: ghcr.io/berriai/litellm:main-stable
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    volumes: ["./litellm.config.yaml:/app/config.yaml:ro"]
+    env_file: [{ path: .env, required: false }]
+    ports: ["4000:4000"]
+
+volumes:
+  pgdata:
+  ollama:

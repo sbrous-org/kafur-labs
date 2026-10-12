@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f7a5a">
+<title>NE Trip Planner</title>
+<style>
+:root{--bg:#f6f5f0;--card:#fff;--ink:#1d2421;--mute:#5d6762;--line:#dfe3dd;--g:#1f7a5a;--g2:#2f9e72;--soft:#e3f1ea;--me:#d3ebdf;--warn:#fff1d9;--warnt:#a4510f;--danger:#b3261e}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1512;--card:#17201c;--ink:#e8ece9;--mute:#9aa6a0;--line:#2b3631;--g:#3fbf8f;--g2:#3fbf8f;--soft:#18332a;--me:#1d4a3a;--warn:#33280f;--warnt:#f0a35e;--danger:#ff8a80}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit}
+#app{height:100dvh;display:flex;flex-direction:column;max-width:1180px;margin:0 auto;background:var(--bg)}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:var(--card);border-bottom:1px solid var(--line)}
+header h1{font-size:16px;margin:0;white-space:nowrap}
+.code{background:var(--soft);color:var(--g);border:0;border-radius:999px;padding:6px 12px;font-weight:800;letter-spacing:1.5px;font-size:14px;min-height:36px;cursor:pointer}
+.sp{flex:1}
+.people{display:flex;align-items:center;cursor:pointer;border:0;background:none;padding:2px}
+.av{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-left:-8px;border:2px solid var(--card);position:relative}
+.av.off{filter:grayscale(1);opacity:.55}
+.av.on::after{content:"";position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:#2ecc71;border:2px solid var(--card)}
+.ibtn{border:1px solid var(--line);background:var(--card);border-radius:10px;min-height:36px;padding:0 12px;cursor:pointer;font-weight:600;font-size:14px}
+#banner{display:none;background:var(--warn);color:var(--warnt);text-align:center;font-size:13px;padding:4px}
+#tabs{display:none;background:var(--card);border-bottom:1px solid var(--line)}
+#tabs button{flex:1;border:0;background:none;padding:11px 0;font-weight:700;color:var(--mute);border-bottom:3px solid transparent;min-height:44px}
+#tabs button.on{color:var(--g);border-color:var(--g)}
+#tabs .badge{display:none;background:var(--g);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px}
+main{flex:1;min-height:0;display:flex}
+#chat{flex:1 1 62%;display:flex;flex-direction:column;min-width:0;min-height:0}
+#plan{flex:1 1 38%;min-width:0;overflow:auto;padding:12px;border-left:1px solid var(--line);background:var(--card)}
+#msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
+.m{max-width:86%;padding:8px 12px;border-radius:16px;background:var(--soft);word-wrap:break-word;overflow-wrap:anywhere;align-self:flex-start;white-space:pre-wrap}
+.m small{display:block;font-size:12px;font-weight:700;color:var(--mute)}
+.m.me{align-self:flex-end;background:var(--me)}
+.m.bot{background:var(--card);border:1.5px solid var(--g2)}
+.m.sys{align-self:center;background:none;color:var(--mute);font-size:13px;padding:2px}
+.m.cm{opacity:.85;border:1px dashed var(--line)}
+.chips{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+.cite{font-size:11.5px;background:var(--warn);color:var(--warnt);border-radius:7px;padding:2px 8px;font-weight:600}
+.dots span{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:var(--mute);animation:b 1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
+form{display:flex;gap:8px;align-items:flex-end;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
+textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink);max-height:120px;min-height:44px}
+#send{border:0;background:var(--g);color:#fff;border-radius:14px;min-width:64px;min-height:44px;font-weight:700;cursor:pointer}
+#send:disabled{opacity:.5}
+.mode{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute);padding:4px 12px 0;background:var(--card)}
+.mode input{width:18px;height:18px}
+#plan h2{font-size:15px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+.ver{font-size:12px;background:var(--soft);color:var(--g);border-radius:7px;padding:2px 8px;font-weight:700}
+.day{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.day h3{margin:0;padding:6px 10px;background:var(--soft);font-size:13px}
+.it{display:flex;gap:6px;align-items:center;padding:7px 10px;border-top:1px solid var(--line);font-size:14px}
+.it .t{flex:1;min-width:0}.it small{display:block;color:var(--mute);font-size:12px}
+.it button{border:0;background:none;color:var(--mute);min-width:32px;min-height:32px;border-radius:8px;cursor:pointer;font-size:15px}
+.it button:hover{background:var(--soft)}
+.empty{color:var(--mute);font-size:14px;padding:16px 4px}
+.tools{display:flex;gap:8px;margin-top:6px}
+/* dialogs */
+dialog{border:0;border-radius:16px;padding:18px;width:min(92vw,380px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 6px;font-size:18px}
+dialog p{margin:4px 0 10px;color:var(--mute);font-size:14px}
+dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:16px;background:var(--bg);color:var(--ink);margin:6px 0}
+.btn{display:block;width:100%;border:0;background:var(--g);color:#fff;border-radius:12px;padding:12px;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px}
+.btn.alt{background:var(--soft);color:var(--g)}
+.btn.danger{background:none;color:var(--danger)}
+.bigcode{font-size:32px;font-weight:800;letter-spacing:5px;text-align:center;color:var(--g);margin:6px 0}
+.err{color:var(--danger);font-size:14px;min-height:20px}
+/* mobile: one pane at a time, bottom composer stays reachable */
+@media (max-width:760px){
+  #tabs{display:flex}
+  main{flex-direction:column}
+  #chat,#plan{flex:1 1 auto}
+  #plan{border-left:0}
+  body[data-tab="chat"] #plan{display:none}
+  body[data-tab="plan"] #chat{display:none}
+  header h1{display:none}
+  .m{max-width:92%}
+}
+</style>
+</head>
+<body data-tab="chat">
+<div id="app">
+  <header>
+    <h1>NE Trip Planner</h1>
+    <button class="code" id="codeBtn" title="Invite friends" aria-label="Invite friends">------</button>
+    <span class="sp"></span>
+    <button class="people" id="people" aria-label="Who is here"></button>
+    <button class="ibtn" id="inviteBtn">Invite</button>
+  </header>
+  <div id="banner">Reconnecting&hellip;</div>
+  <nav id="tabs"><button data-tab="chat" class="on">Chat</button><button data-tab="plan">Plan<span class="badge" id="planBadge">new</span></button></nav>
+  <main>
+    <section id="chat">
+      <div id="msgs" aria-live="polite"></div>
+      <label class="mode"><input type="checkbox" id="friendsOnly"> Friends only (the bot won't answer)</label>
+      <form id="form"><textarea id="text" rows="1" placeholder="Ask the bot or plan with friends&hellip;" maxlength="1000" enterkeyhint="send"></textarea><button id="send" type="submit">Send</button></form>
+    </section>
+    <aside id="plan"><h2>Shared plan <span class="ver" id="ver">empty</span></h2><div id="days"></div>
+      <div class="tools"><button class="ibtn" id="copyPlan">Copy plan</button></div></aside>
+  </main>
+</div>
+
+<dialog id="nameDlg"><form method="dialog" id="nameForm">
+  <h2 id="nameTitle">What should friends call you?</h2>
+  <p id="nameSub">You'll join this trip session.</p>
+  <input type="text" id="nameInput" maxlength="24" autocomplete="nickname" placeholder="Your name" required>
+  <div class="err" id="nameErr"></div>
+  <button class="btn" id="nameGo">Start planning</button>
+  <button class="btn alt" type="button" id="haveCode">I have a different code</button>
+</form></dialog>
+
+<dialog id="inviteDlg">
+  <h2>Invite friends</h2><p>Share the link, or tell them this code:</p>
+  <div class="bigcode" id="bigCode"></div>
+  <button class="btn" id="shareBtn">Share link</button>
+  <button class="btn alt" id="copyLink">Copy link</button>
+  <p id="copied" style="text-align:center;min-height:20px"></p>
+  <button class="btn alt" id="closeInvite">Close</button>
+  <button class="btn danger" id="delBtn">Delete this session</button>
+</dialog>
+
+<dialog id="joinDlg"><form method="dialog" id="joinForm">
+  <h2>Join a trip</h2><p>Enter the 6-character code from your friend.</p>
+  <input type="text" id="joinCode" maxlength="9" autocapitalize="characters" autocomplete="off" placeholder="K7M4QX" required>
+  <div class="err" id="joinErr"></div>
+  <button class="btn">Join</button>
+</form></dialog>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const COLORS = ["#1f7a5a","#c2570c","#6b5bd2","#b0396b","#2a7ab0","#8a6d1d","#4b8a2a","#9a3b3b"];
+let code = null, auth = null, ws = null, you = null, plan = {days: []}, people = [], retry = 0, streamEl = null, seen = new Set(), lastPing = 0;
+const store = {
+  get(c){ try { return JSON.parse(localStorage.getItem("netrip:" + c)); } catch { return null; } },
+  set(c, v){ try { localStorage.setItem("netrip:" + c, JSON.stringify(v)); } catch {} },
+  del(c){ try { localStorage.removeItem("netrip:" + c); } catch {} }
+};
+const api = async (path, opts = {}) => {
+  const r = await fetch(path, {headers: {"content-type": "application/json", ...(opts.headers || {})}, ...opts});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j.detail || r.statusText), {status: r.status});
+  return j;
+};
+const link = () => `${location.origin}/s/${code}`;
+const colorOf = name => COLORS[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- boot ---------- */
+async function boot(){
+  const m = location.pathname.match(/^\/s\/([A-Za-z0-9-]+)/);
+  try {
+    if (m) { code = m[1].toUpperCase().replace(/[^A-Z0-9]/g, ""); await api(`/api/sessions/${code}`); }
+    else { code = (await api("/api/sessions", {method: "POST"})).code; history.replaceState(null, "", `/s/${code}`); }
+  } catch (e) {
+    $("nameTitle").textContent = e.status === 404 ? "That code doesn't exist" : "Couldn't start";
+    $("nameSub").textContent = e.status === 404 ? "Check the code, or start a new trip." : e.message;
+    $("nameInput").style.display = $("nameGo").style.display = "none";
+    $("haveCode").textContent = "Start a new trip";
+    $("haveCode").onclick = () => location.href = "/";
+    $("nameDlg").showModal(); return;
+  }
+  $("codeBtn").textContent = code;
+  const saved = store.get(code);
+  if (saved && saved.token) { auth = saved; connect(); } else askName();
+}
+function askName(msg){
+  $("nameErr").textContent = msg || "";
+  $("nameSub").textContent = `Session ${code}. Friends can join with this code.`;
+  if (!$("nameDlg").open) $("nameDlg").showModal();
+  setTimeout(() => $("nameInput").focus(), 50);
+}
+$("nameForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("nameGo").disabled = true;
+  try {
+    const r = await api(`/api/sessions/${code}/join`, {method: "POST", body: JSON.stringify({name: $("nameInput").value})});
+    auth = {token: r.token, name: r.participant.name}; store.set(code, auth);
+    $("nameDlg").close(); connect();
+  } catch (err) { $("nameErr").textContent = err.message; }
+  $("nameGo").disabled = false;
+});
+$("haveCode").onclick = () => { $("nameDlg").close(); $("joinDlg").showModal(); setTimeout(() => $("joinCode").focus(), 50); };
+$("joinForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const c = $("joinCode").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  try { await api(`/api/sessions/${c}`); location.href = `/s/${c}`; }
+  catch (err) { $("joinErr").textContent = err.status === 404 ? "No session with that code." : err.message; }
+});
+
+/* ---------- websocket ---------- */
+function connect(){
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${proto}://${location.host}/ws/${code}?token=${encodeURIComponent(auth.token)}`);
+  ws.onopen = () => { retry = 0; $("banner").style.display = "none"; };
+  ws.onmessage = ev => handle(JSON.parse(ev.data));
+  ws.onclose = ev => {
+    if (ev.code === 4401) { store.del(code); auth = null; askName("Please enter your name to rejoin."); return; }
+    if (ev.code === 4410) { $("msgs").insertAdjacentHTML("beforeend", '<div class="m sys">This session was deleted.</div>'); return; }
+    $("banner").style.display = "block";
+    setTimeout(connect, Math.min(1000 * 2 ** retry++, 8000));
+  };
+}
+function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+setInterval(() => send({type: "ping"}), 25000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && ws && ws.readyState > 1) { retry = 0; connect(); } });
+
+function handle(m){
+  switch (m.type){
+    case "snapshot":
+      you = m.you; people = m.participants; plan = m.plan; seen = new Set();
+      $("msgs").innerHTML = ""; streamEl = null;
+      m.messages.forEach(addMsg); renderPeople(); renderPlan(m.version, false); scroll(true); break;
+    case "message": addMsg(m); scroll(); if (m.role === "bot") dropStream(); break;
+    case "participants": people = m.participants; renderPeople(); break;
+    case "plan": plan = m.plan; renderPlan(m.version, true); break;
+    case "bot_start": startStream(); break;
+    case "bot_token": appendStream(m.text); break;
+    case "bot_done": dropStream(); break;
+    case "error": toast(m.message); break;
+  }
+}
+
+/* ---------- messages ---------- */
+function addMsg(m){
+  if (seen.has(m.id)) return; seen.add(m.id);
+  const mine = m.pid && you && m.pid === you.id;
+  const el = document.createElement("div");
+  el.className = "m " + (m.role === "system" ? "sys" : m.role === "bot" ? "bot" : mine ? "me" : "") + (m.meta && m.meta.skip_bot ? " cm" : "");
+  if (m.role === "system") el.textContent = m.content;
+  else {
+    const who = m.role === "bot" ? "Bot" : (mine ? `${m.name} (you)` : m.name || "?");
+    el.innerHTML = `<small>${esc(who)}${m.meta && m.meta.skip_bot ? " &middot; friends only" : ""}</small>` + esc(m.content);
+    if (m.meta && m.meta.cites && m.meta.cites.length){
+      const c = document.createElement("div"); c.className = "chips";
+      m.meta.cites.forEach(x => { const s = document.createElement("span"); s.className = "cite";
+        s.textContent = x.title + (x.verified ? ` \u00b7 verified ${x.verified}` : " \u00b7 unverified") + (x.high_risk ? " \u00b7 check before travel" : "");
+        c.appendChild(s); });
+      el.appendChild(c);
+    }
+  }
+  const s = streamEl; $("msgs").insertBefore(el, s && s.parentNode ? s : null);
+}
+function startStream(){
+  dropStream();
+  streamEl = document.createElement("div"); streamEl.className = "m bot";
+  streamEl.innerHTML = '<small>Bot</small><span class="txt"></span><span class="dots"><span></span><span></span><span></span></span>';
+  $("msgs").appendChild(streamEl); scroll();
+}
+function appendStream(t){
+  if (!streamEl) startStream();
+  streamEl.querySelector(".txt").textContent += t;
+  const d = streamEl.querySelector(".dots"); if (d) d.style.display = "none"; scroll();
+}
+function dropStream(){ if (streamEl) { streamEl.remove(); streamEl = null; } }
+function scroll(force){
+  const m = $("msgs");
+  if (force || m.scrollHeight - m.scrollTop - m.clientHeight < 160) requestAnimationFrame(() => m.scrollTop = m.scrollHeight);
+}
+
+/* ---------- people & plan ---------- */
+function renderPeople(){
+  const p = $("people"); p.innerHTML = "";
+  people.forEach(x => { const a = document.createElement("span");
+    a.className = "av " + (x.online ? "on" : "off"); a.style.background = colorOf(x.name);
+    a.textContent = x.name[0].toUpperCase(); a.title = x.name + (x.online ? " (online)" : " (away)"); p.appendChild(a); });
+  p.setAttribute("aria-label", people.map(x => x.name + (x.online ? " online" : " away")).join(", "));
+}
+function renderPlan(version, notify){
+  $("ver").textContent = version ? `v${version} - live` : "empty";
+  const box = $("days"); box.innerHTML = "";
+  if (!plan.days.length) box.innerHTML = '<div class="empty">No plan yet. Tell the bot what you want to see and it will draft one that everyone can edit.</div>';
+  plan.days.forEach(d => {
+    const el = document.createElement("div"); el.className = "day";
+    el.innerHTML = `<h3>Day ${d.n}${d.title && d.title !== "Day " + d.n ? " &middot; " + esc(d.title) : ""}</h3>`;
+    d.items.forEach(it => {
+      const row = document.createElement("div"); row.className = "it";
+      row.innerHTML = `<div class="t">${esc(it.title)}<small>${esc(it.note || "")}${it.note ? " &middot; " : ""}added by ${esc(it.added_by)}</small></div>`;
+      const mk = (txt, label, ops) => { const b = document.createElement("button"); b.textContent = txt; b.setAttribute("aria-label", label);
+        b.onclick = () => send({type: "plan_edit", ops}); row.appendChild(b); };
+      if (d.n > 1) mk("↑", "Move to previous day", [{op: "move", id: it.id, day: d.n - 1}]);
+      if (d.n < 14) mk("↓", "Move to next day", [{op: "move", id: it.id, day: d.n + 1}]);
+      mk("✕", "Remove", [{op: "remove", id: it.id}]);
+      el.appendChild(row);
+    });
+    box.appendChild(el);
+  });
+  if (notify && document.body.dataset.tab === "chat" && matchMedia("(max-width:760px)").matches) $("planBadge").style.display = "inline";
+}
+$("tabs").addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  document.body.dataset.tab = t.dataset.tab;
+  [...$("tabs").children].forEach(b => b.classList.toggle("on", b === t));
+  if (t.dataset.tab === "plan") $("planBadge").style.display = "none"; else scroll(true);
+});
+$("copyPlan").onclick = async () => {
+  try { const t = await (await fetch(`/api/sessions/${code}/plan.txt?token=${encodeURIComponent(auth.token)}`)).text();
+    await navigator.clipboard.writeText(`NE trip plan (${link()})\n` + t); toast("Plan copied"); } catch { toast("Couldn't copy"); }
+};
+
+/* ---------- composer ---------- */
+const ta = $("text");
+ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 120) + "px"; });
+ta.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && matchMedia("(pointer:fine)").matches) { e.preventDefault(); $("form").requestSubmit(); }
+});
+$("form").addEventListener("submit", e => {
+  e.preventDefault();
+  let t = ta.value.trim(); if (!t) return;
+  if ($("friendsOnly").checked && !t.startsWith("//")) t = "//" + t;
+  send({type: "message", text: t}); ta.value = ""; ta.style.height = "auto"; if (matchMedia("(pointer:fine)").matches) ta.focus();
+});
+
+/* ---------- invite ---------- */
+const openInvite = () => { $("bigCode").textContent = code; $("copied").textContent = ""; $("shareBtn").style.display = navigator.share ? "block" : "none"; $("inviteDlg").showModal(); };
+$("codeBtn").onclick = $("inviteBtn").onclick = openInvite;
+$("closeInvite").onclick = () => $("inviteDlg").close();
+$("copyLink").onclick = async () => { try { await navigator.clipboard.writeText(link()); $("copied").textContent = "Link copied"; } catch { $("copied").textContent = link(); } };
+$("shareBtn").onclick = () => navigator.share({title: "Plan our Northeast trip", text: `Join my trip planner. Code: ${code}`, url: link()}).catch(() => {});
+$("delBtn").onclick = async () => {
+  if (!confirm("Delete this session for everyone? This can't be undone.")) return;
+  try { await api(`/api/sessions/${code}`, {method: "DELETE", headers: {"x-token": auth.token}}); store.del(code); location.href = "/"; } catch (e) { toast(e.message); }
+};
+function toast(t){ const b = $("banner"); b.textContent = t; b.style.display = "block"; setTimeout(() => { b.style.display = "none"; b.textContent = "Reconnecting…"; }, 2500); }
+
+boot();
+})();
+</script>
+</body>
+</html>

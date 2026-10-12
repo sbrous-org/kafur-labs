@@ -1,6 +1,6 @@
 # Requirements — NE Trip Planner
 
-Status: **draft for review**. Decisions confirmed with the requester are marked ✅; open items are in §9.
+Status: **implemented as v0** (see DESIGN §13 for deviations). Decisions confirmed with the requester are marked ✅; open items are in §9.
 
 ## 1. Goal
 
@@ -53,7 +53,7 @@ A very simple web bot where a group plans a Northeast India trip together, in on
 | ID | Requirement |
 |---|---|
 | N1 | Fan-out latency (message → other clients) p95 < 1 s; bot first token p95 < 3 s. |
-| N2 | UI: one page, mobile-first, no install; works on 3G-ish connections (small bundle). |
+| N2 | UI: one page, **mobile-first** (tabbed Chat/Plan on phones, split view on desktop), no install, no build step, single ~20 KB file; works on 3G-ish connections. |
 | N3 | Cost guardrails: per-session token budget and per-IP/session rate limits; hard stop with friendly message. Target LLM cost ≤ ~2 cents per 30-turn session on a hosted small model; no vendor lock-in. |
 | N4 | Privacy: no accounts, no PII beyond display name; messages stored only for session life; join codes are the only secret. |
 | N5 | Security: rate-limited code lookups (anti-brute-force), tokens unguessable (≥128-bit), CORS locked, prompt-injection-resistant design (model output can only produce validated plan edits) (KB text is data, never instructions). |
@@ -87,6 +87,6 @@ User accounts/login, payments, bookings, live transport/hotel availability, maps
 | Q2 | Can any member edit/delete the plan, or only the bot? | Any member can remove/reorder; bot does adds. |
 | Q3 | Embedding model (must also be vendor-neutral). | Local `bge-small` (free, in-process). Alt: any OpenAI-compatible embeddings endpoint. |
 | Q4 | ~~LLM tier~~ **Decided: very small/cheap model, pluggable.** Remaining: which 2–3 models to benchmark first? | Candidates: one hosted mini/flash/haiku-class model, one 7–8B open model via Ollama. Cheapest that clears the eval bar wins. |
-| Q7 | LiteLLM dependency, or a thin own adapter for OpenAI-compatible endpoints? | LiteLLM (fastest, widest coverage); revisit if it gets heavy. |
+| Q7 | ~~LiteLLM library or own adapter~~ **Resolved:** own thin OpenAI-compatible adapter; LiteLLM as an optional proxy container. | — |
 | Q5 | Where does the KB content for 7 new states come from? | You curate/provide sources; I draft entries with citations for your review. |
 | Q6 | Host target for the demo (Fly/Render/Cloud Run/…)? | Any container host with WebSocket support + managed Postgres w/ pgvector. |

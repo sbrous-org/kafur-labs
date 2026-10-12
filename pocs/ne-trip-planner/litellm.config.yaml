@@ -1,0 +1,14 @@
+# Only used with: docker compose --profile litellm up
+# LiteLLM exposes ONE OpenAI-compatible endpoint (http://litellm:4000/v1) in front of 100+ providers.
+# Set in .env:  LLM_PROVIDER=openai  LLM_BASE_URL=http://litellm:4000/v1  LLM_MODEL=small
+# Uncomment ONE upstream below (put its key in .env) and pick a small/cheap model id from that provider.
+model_list:
+  # - model_name: small
+  #   litellm_params: { model: anthropic/<small-model-id>, api_key: os.environ/ANTHROPIC_API_KEY }
+  # - model_name: small
+  #   litellm_params: { model: gemini/<flash-lite-model-id>, api_key: os.environ/GEMINI_API_KEY }
+  # - model_name: small
+  #   litellm_params: { model: openai/<mini-model-id>, api_key: os.environ/OPENAI_API_KEY }
+  # - model_name: small
+  #   litellm_params: { model: ollama/qwen2.5:1.5b-instruct, api_base: http://ollama:11434 }
+  []

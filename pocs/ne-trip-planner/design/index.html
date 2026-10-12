@@ -58,10 +58,10 @@ svg .sm{font-size:11px;fill:var(--mute)}
 </style>
 </head>
 <body>
-<nav><a href="#goal">Goal</a><a href="#arch">Architecture</a><a href="#ui">UI</a><a href="#flow">Flows</a><a href="#rag">RAG</a><a href="#data">Data</a><a href="#deploy">Deploy</a><a href="#eval">Eval</a><a href="#plan">Plan</a><a href="#open">Open questions</a></nav>
+<nav><a href="#goal">Goal</a><a href="#arch">Architecture</a><a href="#ui">UI</a><a href="#mobile">Mobile</a><a href="#flow">Flows</a><a href="#rag">RAG</a><a href="#data">Data</a><a href="#deploy">Deploy</a><a href="#eval">Eval</a><a href="#plan">Plan</a><a href="#open">Open questions</a></nav>
 <div class="wrap">
 <header class="top">
-  <span class="badge">DESIGN REVIEW — not implemented</span>
+  <span class="badge">v0 IMPLEMENTED — see README for run + status</span>
   <h1>NE Trip Planner</h1>
   <p class="mute">A shared-session travel bot for Northeast India. Open a link, invite friends with a code, plan together with a bot grounded in a curated knowledge base. POC in <code>pocs/ne-trip-planner/</code>.</p>
 </header>
@@ -127,6 +127,15 @@ svg .sm{font-size:11px;fill:var(--mute)}
     <p class="mute" style="font-size:12px">✕ remove / ↕ reorder by anyone · Export · Share</p>
   </div>
 </div>
+
+<h2 id="mobile">3b · Mobile view (real UI, built)</h2>
+<p class="mute">Same page, mobile-first: under 760&nbsp;px the chat and plan become tabs (a badge says when the plan changed), the composer stays at the bottom with safe-area padding, touch targets are 44&nbsp;px, and the invite sheet uses the phone's share menu. Screenshots are from the running app (desktop and phone-sized browsers in the same session).</p>
+<div class="grid g3" style="align-items:start">
+  <figure style="margin:0"><img src="screens/m2-chat.png" alt="Phone: chat tab" style="width:100%;border:1px solid var(--line);border-radius:12px"><figcaption class="mute" style="font-size:13px">Phone &middot; chat</figcaption></figure>
+  <figure style="margin:0"><img src="screens/m3-plan.png" alt="Phone: plan tab" style="width:100%;border:1px solid var(--line);border-radius:12px"><figcaption class="mute" style="font-size:13px">Phone &middot; shared plan (move / remove)</figcaption></figure>
+  <figure style="margin:0"><img src="screens/m4-invite.png" alt="Phone: invite sheet" style="width:100%;border:1px solid var(--line);border-radius:12px"><figcaption class="mute" style="font-size:13px">Phone &middot; invite (share link / code)</figcaption></figure>
+</div>
+<figure style="margin:14px 0 0"><img src="screens/d1-chat.png" alt="Desktop split view" style="width:100%;border:1px solid var(--line);border-radius:12px"><figcaption class="mute" style="font-size:13px">Desktop &middot; chat and live plan side by side</figcaption></figure>
 
 <h2 id="flow">4 · Key flows</h2>
 <div class="grid g2">
