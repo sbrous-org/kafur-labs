@@ -2,6 +2,8 @@
 
 > **Status: design review — nothing implemented yet.** Open
 > [`design/index.html`](design/index.html) in a browser for the visual design,
+> watch the 69 s flow video [`design/ne-trip-planner-flow.mp4`](design/ne-trip-planner-flow.mp4)
+> (source: `design/flow-video.html`, re-render with `python design/render_video.py`),
 > or read [`REQUIREMENTS.md`](REQUIREMENTS.md) and [`DESIGN.md`](DESIGN.md).
 
 ## Hypothesis
