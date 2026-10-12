@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NE Trip Planner — Design Review</title>
+<style>
+:root{--bg:#fafaf7;--card:#fff;--ink:#1d2421;--mute:#5d6762;--line:#dfe3dd;--accent:#1f7a5a;--accent2:#c2570c;--soft:#e6f2ec;--warn:#fff4e0}
+@media (prefers-color-scheme:dark){:root{--bg:#121614;--card:#1a201d;--ink:#e8ece9;--mute:#9aa6a0;--line:#2c3631;--accent:#4cc79a;--accent2:#f0944d;--soft:#18332a;--warn:#33280f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 64px}
+header.top{padding:40px 0 16px}
+h1{font-size:30px;margin:0 0 6px}
+h2{font-size:22px;margin:44px 0 12px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:16px;margin:18px 0 6px}
+p{margin:8px 0}.mute{color:var(--mute)}
+nav{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);z-index:5;overflow-x:auto;white-space:nowrap;padding:8px 16px}
+nav a{margin-right:14px;color:var(--mute);text-decoration:none;font-size:14px}nav a:hover{color:var(--accent)}
+.badge{display:inline-block;background:var(--warn);color:var(--accent2);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.card h3{margin-top:0}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:block;overflow-x:auto}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:600}
+code,pre{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+code{background:var(--soft);padding:1px 5px;border-radius:4px}
+pre{background:var(--card);border:1px solid var(--line);padding:12px;border-radius:8px;overflow-x:auto}
+ol.steps{counter-reset:s;list-style:none;padding:0}
+ol.steps li{counter-increment:s;position:relative;padding:8px 8px 8px 44px;margin:6px 0;background:var(--card);border:1px solid var(--line);border-radius:10px}
+ol.steps li::before{content:counter(s);position:absolute;left:10px;top:8px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;text-align:center;line-height:24px;font-size:13px;font-weight:700}
+svg text{fill:var(--ink);font-family:system-ui,sans-serif;font-size:13px}
+svg .box{fill:var(--card);stroke:var(--line);stroke-width:1.5}
+svg .hl{fill:var(--soft);stroke:var(--accent);stroke-width:1.5}
+svg .ext{fill:var(--warn);stroke:var(--accent2);stroke-width:1.5}
+svg .ln{stroke:var(--mute);stroke-width:1.4;fill:none}
+svg .sm{font-size:11px;fill:var(--mute)}
+.diagram{overflow-x:auto}.diagram svg{min-width:760px;width:100%;height:auto}
+/* wireframe */
+.phone{display:grid;grid-template-columns:1.4fr 1fr;gap:0;border:2px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);min-height:460px}
+@media(max-width:700px){.phone{grid-template-columns:1fr}}
+.wf-head{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.chip{background:var(--soft);color:var(--accent);border-radius:999px;padding:3px 10px;font-weight:700;font-size:13px;letter-spacing:1px}
+.av{width:26px;height:26px;border-radius:50%;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-left:-6px;border:2px solid var(--card)}
+.chat{padding:12px;display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--line)}
+.msg{max-width:88%;padding:8px 10px;border-radius:12px;font-size:14px;background:var(--soft)}
+.msg b{display:block;font-size:12px;color:var(--mute)}
+.msg.bot{background:var(--card);border:1px solid var(--accent);align-self:flex-start}
+.msg.me{align-self:flex-end}
+.cite{display:inline-block;font-size:11px;background:var(--warn);color:var(--accent2);border-radius:6px;padding:0 6px;margin-left:4px}
+.compose{margin-top:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:var(--mute);font-size:14px;display:flex;justify-content:space-between}
+.plan{padding:12px;font-size:14px}
+.day{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.day h4{margin:0;padding:6px 10px;background:var(--soft);font-size:13px}
+.item{padding:6px 10px;border-top:1px solid var(--line)}.item small{color:var(--mute);display:block}
+.ok{color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+<nav><a href="#goal">Goal</a><a href="#arch">Architecture</a><a href="#ui">UI</a><a href="#flow">Flows</a><a href="#rag">RAG</a><a href="#data">Data</a><a href="#deploy">Deploy</a><a href="#eval">Eval</a><a href="#plan">Plan</a><a href="#open">Open questions</a></nav>
+<div class="wrap">
+<header class="top">
+  <span class="badge">DESIGN REVIEW — not implemented</span>
+  <h1>NE Trip Planner</h1>
+  <p class="mute">A shared-session travel bot for Northeast India. Open a link, invite friends with a code, plan together with a bot grounded in a curated knowledge base. POC in <code>pocs/ne-trip-planner/</code>.</p>
+</header>
+
+<h2 id="goal">1 · Goal &amp; confirmed decisions</h2>
+<div class="grid g3">
+  <div class="card"><h3>Relation to Oxomiai</h3><p>New standalone POC. Reuses Oxomiai's KB JSONL + schema as seed, own backend.</p></div>
+  <div class="card"><h3>Geography</h3><p>All 8 NE states, Assam deepest. ~40 new KB entries for the 7 other states.</p></div>
+  <div class="card"><h3>Join model</h3><p>No login. Open link → session. Others join via 6-char code + display name.</p></div>
+  <div class="card"><h3>Cloud</h3><p>Cloud-agnostic: container + Postgres(pgvector) + Anthropic API. Maps to AWS/GCP/Fly/Render.</p></div>
+  <div class="card"><h3>Hypothesis</h3><p>A group converges on a concrete itinerary in one sitting; ≥80% grounded answers; fan-out p95 &lt; 1 s.</p></div>
+  <div class="card"><h3>Out of scope</h3><p>Accounts, payments, bookings, live transport, maps, voice, offline, multi-language.</p></div>
+</div>
+
+<h2 id="arch">2 · Architecture</h2>
+<div class="card diagram">
+<svg viewBox="0 0 900 420" role="img" aria-label="System architecture">
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="currentColor" style="color:var(--mute)"/></marker></defs>
+  <rect class="box" x="20" y="30" width="130" height="50" rx="8"/><text x="85" y="60" text-anchor="middle">Browser · Asha</text>
+  <rect class="box" x="20" y="100" width="130" height="50" rx="8"/><text x="85" y="130" text-anchor="middle">Browser · Ravi</text>
+  <rect class="box" x="20" y="170" width="130" height="50" rx="8"/><text x="85" y="200" text-anchor="middle">Browser · Mira</text>
+  <rect class="box" x="210" y="90" width="110" height="70" rx="8"/><text x="265" y="120" text-anchor="middle">Load balancer</text><text class="sm" x="265" y="138" text-anchor="middle">TLS · WS upgrade</text>
+  <path class="ln" d="M150 55 L210 115" marker-end="url(#a)"/><path class="ln" d="M150 125 L210 125" marker-end="url(#a)"/><path class="ln" d="M150 195 L210 140" marker-end="url(#a)"/>
+  <rect class="hl" x="380" y="20" width="270" height="260" rx="12"/>
+  <text x="515" y="45" text-anchor="middle" font-weight="700">App container (FastAPI) ×N</text>
+  <rect class="box" x="400" y="60" width="230" height="38" rx="6"/><text x="515" y="84" text-anchor="middle">REST: sessions · join · plan export</text>
+  <rect class="box" x="400" y="106" width="230" height="38" rx="6"/><text x="515" y="130" text-anchor="middle">WebSocket hub: fan-out · presence</text>
+  <rect class="box" x="400" y="152" width="230" height="38" rx="6"/><text x="515" y="176" text-anchor="middle">Orchestrator: turn lock · tool loop</text>
+  <rect class="box" x="400" y="198" width="230" height="38" rx="6"/><text x="515" y="222" text-anchor="middle">Retriever + local embedder</text>
+  <text class="sm" x="515" y="262" text-anchor="middle">static frontend served from same image</text>
+  <path class="ln" d="M320 125 L380 125" marker-end="url(#a)"/>
+  <rect class="box" x="400" y="320" width="230" height="80" rx="8"/><text x="515" y="345" text-anchor="middle" font-weight="700">Postgres + pgvector</text><text class="sm" x="515" y="365" text-anchor="middle">sessions · messages · plan versions</text><text class="sm" x="515" y="381" text-anchor="middle">kb_chunks · LISTEN/NOTIFY fan-out</text>
+  <path class="ln" d="M515 280 L515 320" marker-end="url(#a)"/>
+  <rect class="ext" x="740" y="60" width="140" height="56" rx="8"/><text x="810" y="86" text-anchor="middle">Anthropic API</text><text class="sm" x="810" y="103" text-anchor="middle">Claude · tool use</text>
+  <rect class="ext" x="740" y="150" width="140" height="56" rx="8"/><text x="810" y="176" text-anchor="middle">Open-Meteo</text><text class="sm" x="810" y="193" text-anchor="middle">weather</text>
+  <path class="ln" d="M650 160 L740 90" marker-end="url(#a)"/><path class="ln" d="M650 175 L740 178" marker-end="url(#a)"/>
+  <rect class="box" x="740" y="250" width="140" height="56" rx="8"/><text x="810" y="276" text-anchor="middle">KB source files</text><text class="sm" x="810" y="293" text-anchor="middle">JSONL + markdown</text>
+  <path class="ln" d="M740 290 L630 360" marker-end="url(#a)" stroke-dasharray="4 3"/><text class="sm" x="700" y="345">make ingest</text>
+</svg>
+</div>
+<p class="mute">Cross-instance fan-out uses Postgres <code>LISTEN/NOTIFY</code>, so the POC needs no Redis yet still runs on N instances.</p>
+
+<h2 id="ui">3 · Interface (wireframe)</h2>
+<p class="mute">One page. Desktop: chat + live plan side by side. Mobile: tabs (Chat | Plan).</p>
+<div class="phone">
+  <div class="wf-head">
+    <b>NE Trip Planner</b><span class="chip">K7M-4QX</span><span class="mute" style="font-size:13px">🔗 Copy invite link</span>
+    <span style="margin-left:auto"><span class="av" style="background:#1f7a5a">A</span><span class="av" style="background:#c2570c">R</span><span class="av" style="background:#6b5bd2">M</span></span>
+  </div>
+  <div class="chat">
+    <div class="msg"><b>Asha</b>We have 7 days in October. I want wildlife!</div>
+    <div class="msg"><b>Ravi</b>I'd rather do culture + Meghalaya caves 😅</div>
+    <div class="msg bot"><b>Bot · thinking about both</b>Great mix: Kaziranga (Oct is just reopening, Nov–Apr is best) <span class="cite">KB:kaziranga</span> then Shillong–Cherrapunji. Added Days 1–7 to the plan →</div>
+    <div class="msg me"><b>Mira · you</b>Do we need permits anywhere?</div>
+    <div class="msg bot"><b>Bot</b>Not for Assam/Meghalaya for Indian nationals; Arunachal needs ILP <span class="cite">KB:permits-arunachal · verified 2026-03</span> — verify before travel.</div>
+    <div class="compose"><span>Message the bot… (prefix // to chat only with friends)</span><b class="ok">Send</b></div>
+  </div>
+  <div class="plan">
+    <b>Shared plan</b> <span class="mute">· v6 · live</span>
+    <div class="day" style="margin-top:8px"><h4>Day 1 · Guwahati</h4><div class="item">Kamakhya Temple<small>3h · added by Bot</small></div></div>
+    <div class="day"><h4>Day 2–3 · Kaziranga</h4><div class="item">Jeep safari (Central range)<small>4h · added by Asha</small></div></div>
+    <div class="day"><h4>Day 4–6 · Meghalaya</h4><div class="item">Living root bridges, Cherrapunji<small>Day trip · added by Ravi</small></div><div class="item">Mawsmai Cave<small>1h · added by Bot</small></div></div>
+    <p class="mute" style="font-size:12px">✕ remove / ↕ reorder by anyone · Export · Share</p>
+  </div>
+</div>
+
+<h2 id="flow">4 · Key flows</h2>
+<div class="grid g2">
+<div><h3>Create &amp; join</h3>
+<ol class="steps">
+<li>Open <code>/</code> → server creates session + code, redirects to <code>/s/K7M4QX</code>.</li>
+<li>Enter display name once; participant token saved on device.</li>
+<li>Copy link/code to friends. They open it (or type the code on the home page), set a name.</li>
+<li>WebSocket connects; snapshot of chat + plan arrives; presence updates.</li>
+</ol></div>
+<div><h3>One bot turn</h3>
+<ol class="steps">
+<li>Messages from any member are stored and broadcast instantly.</li>
+<li>Turn lock: if the bot is busy, new messages queue and are batched into the next turn.</li>
+<li>Orchestrator builds prompt: rules + participants/prefs + current plan + recent chat.</li>
+<li>Claude calls <code>search_kb</code> / <code>get_weather</code> / <code>update_plan</code>; tokens stream to all clients.</li>
+<li><code>update_plan</code> is validated, versioned and broadcast; the plan panel updates live.</li>
+</ol></div>
+</div>
+
+<h2 id="rag">5 · Knowledge &amp; RAG</h2>
+<div class="grid g2">
+<div class="card"><h3>Ingest</h3><p>JSONL (Oxomiai seed + new states) and markdown guides (permits, seasons, transit hubs, itineraries, budgets) → 300–500-token chunks → local <code>bge-small</code> embeddings → <code>kb_chunks</code> with <code>state, type, season, source, last_verified, high_risk</code>.</p></div>
+<div class="card"><h3>Retrieve</h3><p>Hybrid: pgvector similarity + Postgres full-text, fused by RRF, metadata-filtered. Corpus is a few hundred chunks — no managed vector DB needed.</p></div>
+<div class="card"><h3>Guardrails</h3><p>No place/permit/season fact without a tool result. Chunks cite <code>kb_id</code> and date; permit/season answers end with “verify before travel”. Unknown → “I don't have that.”</p></div>
+<div class="card"><h3>Why Postgres+pgvector</h3><p>Already needed for sessions; portable across all clouds; one thing to run. Revisit (OpenSearch/Vertex) only if the corpus grows by orders of magnitude.</p></div>
+</div>
+
+<h2 id="data">6 · Data model</h2>
+<pre>sessions(id, code UNIQUE, created_at, last_active_at, token_budget_used, summary)
+participants(id, session_id, name, token_hash, joined_at, last_seen_at)
+messages(id, session_id, seq, participant_id NULL, role, content, meta jsonb, created_at)
+plan_versions(session_id, version, plan jsonb, changed_by, created_at)
+kb_docs(id, kind, state, region, title, source, last_verified, high_risk, raw jsonb)
+kb_chunks(id, doc_id, text, metadata jsonb, embedding vector(384), tsv tsvector)</pre>
+
+<h2 id="deploy">7 · Deployment (cloud-agnostic)</h2>
+<table><tr><th>Piece</th><th>AWS</th><th>GCP</th><th>Anywhere</th></tr>
+<tr><td>App container</td><td>ECS Fargate / App Runner</td><td>Cloud Run</td><td>Fly.io / Render / VM</td></tr>
+<tr><td>Postgres+pgvector</td><td>RDS / Aurora</td><td>Cloud SQL / AlloyDB</td><td>Neon / Supabase</td></tr>
+<tr><td>Secrets</td><td>Secrets Manager</td><td>Secret Manager</td><td>env vars</td></tr>
+<tr><td>Local</td><td colspan="3"><code>docker compose up</code> (app + postgres)</td></tr></table>
+
+<h2>8 · Safety &amp; limits</h2>
+<ul>
+<li>Per-session token budget + message rate limit; max 8 participants; 14-day idle TTL; any member can delete the session.</li>
+<li>Join/code attempts rate-limited; tokens stored hashed; ≥128-bit participant tokens.</li>
+<li>KB text and chat are delimited data, never instructions; the bot's only write tool touches the plan.</li>
+</ul>
+
+<h2 id="eval">9 · Success criteria</h2>
+<table><tr><th>Metric</th><th>Bar</th></tr>
+<tr><td>Grounded + helpful answers (manual rubric)</td><td>≥ 80%</td></tr>
+<tr><td>Fabricated permit/season facts (≥10-item subset)</td><td>0</td></tr>
+<tr><td>Scripted group scenarios reaching a plan in ≤ 15 turns</td><td>≥ 70%</td></tr>
+<tr><td>Fan-out latency p95 / bot first token p95</td><td>&lt; 1 s / &lt; 3 s (5 concurrent sessions)</td></tr></table>
+
+<h2 id="plan">10 · Build plan (≈ 2 weeks after sign-off)</h2>
+<table><tr><th>Days</th><th>Deliverable</th></tr>
+<tr><td>1–2</td><td>Scaffold, compose, schema, session/join, WS fan-out</td></tr>
+<tr><td>3–5</td><td>Chat UI, presence, bot turn loop, streaming, turn lock</td></tr>
+<tr><td>6–8</td><td>KB ingest, hybrid search, weather tool, citations</td></tr>
+<tr><td>9–10</td><td>Shared plan: tool, versions, manual edit, export</td></tr>
+<tr><td>11–12</td><td>Limits, summariser, 2-instance test, deploy</td></tr>
+<tr><td>13–14</td><td>Eval run, outcome: promote / extend / kill</td></tr></table>
+<p class="mute">ADRs to write on approval: 0002 stack &amp; fan-out · 0003 pgvector + local embeddings · 0004 Anthropic direct · 0005 anonymous sessions.</p>
+
+<h2 id="open">11 · Open questions — need your call</h2>
+<table><tr><th>#</th><th>Question</th><th>Proposed default</th></tr>
+<tr><td>Q1</td><td>Should the bot reply to every message or only when addressed?</td><td>Reply to all (planning room); <code>//</code> prefix = friends-only chat. Alt: only on <code>@bot</code>.</td></tr>
+<tr><td>Q2</td><td>Who can edit the plan?</td><td>Anyone removes/reorders; bot adds.</td></tr>
+<tr><td>Q3</td><td>Embeddings (Anthropic has none)</td><td>Local bge-small. Alt: Voyage AI.</td></tr>
+<tr><td>Q4</td><td>LLM tier</td><td>Sonnet-class for chat, Haiku-class for summaries; configurable.</td></tr>
+<tr><td>Q5</td><td>Source of KB content for 7 new states</td><td>You supply/approve sources; I draft cited entries for review.</td></tr>
+<tr><td>Q6</td><td>Demo host</td><td>Any container host with WebSocket + managed Postgres.</td></tr></table>
+</div>
+</body>
+</html>
