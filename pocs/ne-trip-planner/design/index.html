@@ -71,7 +71,7 @@ svg .sm{font-size:11px;fill:var(--mute)}
   <div class="card"><h3>Relation to Oxomiai</h3><p>New standalone POC. Reuses Oxomiai's KB JSONL + schema as seed, own backend.</p></div>
   <div class="card"><h3>Geography</h3><p>All 8 NE states, Assam deepest. ~40 new KB entries for the 7 other states.</p></div>
   <div class="card"><h3>Join model</h3><p>No login. Open link → session. Others join via 6-char code + display name.</p></div>
-  <div class="card"><h3>Cloud</h3><p>Cloud-agnostic: container + Postgres(pgvector) + Anthropic API. Maps to AWS/GCP/Fly/Render.</p></div>
+  <div class="card"><h3>Cloud</h3><p>Cloud-agnostic: container + Postgres(pgvector) + any LLM provider. Maps to AWS/GCP/Fly/Render.</p></div>
   <div class="card"><h3>Hypothesis</h3><p>A group converges on a concrete itinerary in one sitting; ≥80% grounded answers; fan-out p95 &lt; 1 s.</p></div>
   <div class="card"><h3>Out of scope</h3><p>Accounts, payments, bookings, live transport, maps, voice, offline, multi-language.</p></div>
 </div>
@@ -89,13 +89,13 @@ svg .sm{font-size:11px;fill:var(--mute)}
   <text x="515" y="45" text-anchor="middle" font-weight="700">App container (FastAPI) ×N</text>
   <rect class="box" x="400" y="60" width="230" height="38" rx="6"/><text x="515" y="84" text-anchor="middle">REST: sessions · join · plan export</text>
   <rect class="box" x="400" y="106" width="230" height="38" rx="6"/><text x="515" y="130" text-anchor="middle">WebSocket hub: fan-out · presence</text>
-  <rect class="box" x="400" y="152" width="230" height="38" rx="6"/><text x="515" y="176" text-anchor="middle">Orchestrator: turn lock · tool loop</text>
+  <rect class="box" x="400" y="152" width="230" height="38" rx="6"/><text x="515" y="176" text-anchor="middle">Orchestrator: turn lock · 1 LLM call</text>
   <rect class="box" x="400" y="198" width="230" height="38" rx="6"/><text x="515" y="222" text-anchor="middle">Retriever + local embedder</text>
   <text class="sm" x="515" y="262" text-anchor="middle">static frontend served from same image</text>
   <path class="ln" d="M320 125 L380 125" marker-end="url(#a)"/>
   <rect class="box" x="400" y="320" width="230" height="80" rx="8"/><text x="515" y="345" text-anchor="middle" font-weight="700">Postgres + pgvector</text><text class="sm" x="515" y="365" text-anchor="middle">sessions · messages · plan versions</text><text class="sm" x="515" y="381" text-anchor="middle">kb_chunks · LISTEN/NOTIFY fan-out</text>
   <path class="ln" d="M515 280 L515 320" marker-end="url(#a)"/>
-  <rect class="ext" x="740" y="60" width="140" height="56" rx="8"/><text x="810" y="86" text-anchor="middle">Anthropic API</text><text class="sm" x="810" y="103" text-anchor="middle">Claude · tool use</text>
+  <rect class="ext" x="740" y="60" width="140" height="56" rx="8"/><text x="810" y="86" text-anchor="middle">LLM (pluggable)</text><text class="sm" x="810" y="103" text-anchor="middle">small, cheap model</text>
   <rect class="ext" x="740" y="150" width="140" height="56" rx="8"/><text x="810" y="176" text-anchor="middle">Open-Meteo</text><text class="sm" x="810" y="193" text-anchor="middle">weather</text>
   <path class="ln" d="M650 160 L740 90" marker-end="url(#a)"/><path class="ln" d="M650 175 L740 178" marker-end="url(#a)"/>
   <rect class="box" x="740" y="250" width="140" height="56" rx="8"/><text x="810" y="276" text-anchor="middle">KB source files</text><text class="sm" x="810" y="293" text-anchor="middle">JSONL + markdown</text>
@@ -142,8 +142,8 @@ svg .sm{font-size:11px;fill:var(--mute)}
 <li>Messages from any member are stored and broadcast instantly.</li>
 <li>Turn lock: if the bot is busy, new messages queue and are batched into the next turn.</li>
 <li>Orchestrator builds prompt: rules + participants/prefs + current plan + recent chat.</li>
-<li>Claude calls <code>search_kb</code> / <code>get_weather</code> / <code>update_plan</code>; tokens stream to all clients.</li>
-<li><code>update_plan</code> is validated, versioned and broadcast; the plan panel updates live.</li>
+<li>Orchestrator retrieves KB chunks + weather (no LLM), then makes <b>one call</b> to a small LLM that returns <code>reply</code> + <code>plan_ops</code> as JSON; the reply streams to all clients.</li>
+<li><code>plan_ops</code> are schema-validated, versioned and broadcast; the plan panel updates live.</li>
 </ol></div>
 </div>
 
@@ -151,8 +151,14 @@ svg .sm{font-size:11px;fill:var(--mute)}
 <div class="grid g2">
 <div class="card"><h3>Ingest</h3><p>JSONL (Oxomiai seed + new states) and markdown guides (permits, seasons, transit hubs, itineraries, budgets) → 300–500-token chunks → local <code>bge-small</code> embeddings → <code>kb_chunks</code> with <code>state, type, season, source, last_verified, high_risk</code>.</p></div>
 <div class="card"><h3>Retrieve</h3><p>Hybrid: pgvector similarity + Postgres full-text, fused by RRF, metadata-filtered. Corpus is a few hundred chunks — no managed vector DB needed.</p></div>
-<div class="card"><h3>Guardrails</h3><p>No place/permit/season fact without a tool result. Chunks cite <code>kb_id</code> and date; permit/season answers end with “verify before travel”. Unknown → “I don't have that.”</p></div>
+<div class="card"><h3>Guardrails</h3><p>No place/permit/season fact that isn't in the retrieved chunks. Chunks cite <code>kb_id</code> and date; permit/season answers end with “verify before travel”. Unknown → “I don't have that.”</p></div>
 <div class="card"><h3>Why Postgres+pgvector</h3><p>Already needed for sessions; portable across all clouds; one thing to run. Revisit (OpenSearch/Vertex) only if the corpus grows by orders of magnitude.</p></div>
+</div>
+
+<h3>Pluggable small LLM</h3>
+<div class="grid g2">
+<div class="card"><h3>One port, any model</h3><p><code>LLM.chat(messages, stream, json_schema)</code> behind LiteLLM or a thin OpenAI-compatible adapter. Model, base URL and key are env config: <code>LLM_MODEL=provider/model</code>. Hosted small models <b>or</b> self-hosted Qwen/Llama/Gemma via Ollama/vLLM.</p></div>
+<div class="card"><h3>Built for weak models</h3><p>Retrieval is deterministic, one call per turn, short prompt (~2k tokens), JSON output with validation + one repair retry. No native tool-calling needed. Eval runs per model; cheapest that clears the bar ships.</p></div>
 </div>
 
 <h2 id="data">6 · Data model</h2>
@@ -174,7 +180,7 @@ kb_chunks(id, doc_id, text, metadata jsonb, embedding vector(384), tsv tsvector)
 <ul>
 <li>Per-session token budget + message rate limit; max 8 participants; 14-day idle TTL; any member can delete the session.</li>
 <li>Join/code attempts rate-limited; tokens stored hashed; ≥128-bit participant tokens.</li>
-<li>KB text and chat are delimited data, never instructions; the bot's only write tool touches the plan.</li>
+<li>KB text and chat are delimited data, never instructions; the model can only emit validated plan edits.</li>
 </ul>
 
 <h2 id="eval">9 · Success criteria</h2>
@@ -192,14 +198,14 @@ kb_chunks(id, doc_id, text, metadata jsonb, embedding vector(384), tsv tsvector)
 <tr><td>9–10</td><td>Shared plan: tool, versions, manual edit, export</td></tr>
 <tr><td>11–12</td><td>Limits, summariser, 2-instance test, deploy</td></tr>
 <tr><td>13–14</td><td>Eval run, outcome: promote / extend / kill</td></tr></table>
-<p class="mute">ADRs to write on approval: 0002 stack &amp; fan-out · 0003 pgvector + local embeddings · 0004 Anthropic direct · 0005 anonymous sessions.</p>
+<p class="mute">ADRs to write on approval: 0002 stack &amp; fan-out · 0003 pgvector + local embeddings · 0004 pluggable LLM port · 0005 anonymous sessions.</p>
 
 <h2 id="open">11 · Open questions — need your call</h2>
 <table><tr><th>#</th><th>Question</th><th>Proposed default</th></tr>
 <tr><td>Q1</td><td>Should the bot reply to every message or only when addressed?</td><td>Reply to all (planning room); <code>//</code> prefix = friends-only chat. Alt: only on <code>@bot</code>.</td></tr>
 <tr><td>Q2</td><td>Who can edit the plan?</td><td>Anyone removes/reorders; bot adds.</td></tr>
-<tr><td>Q3</td><td>Embeddings (Anthropic has none)</td><td>Local bge-small. Alt: Voyage AI.</td></tr>
-<tr><td>Q4</td><td>LLM tier</td><td>Sonnet-class for chat, Haiku-class for summaries; configurable.</td></tr>
+<tr><td>Q3</td><td>Embeddings (vendor-neutral too)</td><td>Local bge-small. Alt: any OpenAI-compatible endpoint.</td></tr>
+<tr><td>Q4</td><td>Which 2–3 models to benchmark first? (decided: small, cheap, pluggable)</td><td>One hosted mini/flash/haiku-class + one 7–8B open model via Ollama; cheapest that passes wins.</td></tr><tr><td>Q7</td><td>LiteLLM or thin own adapter?</td><td>LiteLLM.</td></tr>
 <tr><td>Q5</td><td>Source of KB content for 7 new states</td><td>You supply/approve sources; I draft cited entries for review.</td></tr>
 <tr><td>Q6</td><td>Demo host</td><td>Any container host with WebSocket + managed Postgres.</td></tr></table>
 </div>

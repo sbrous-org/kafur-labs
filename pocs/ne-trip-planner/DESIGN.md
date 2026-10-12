@@ -12,13 +12,13 @@ Browsers (A, B, C) ──HTTPS/WSS──▶ Load balancer (TLS, WS upgrade)
                          │  • REST: sessions/join/plan │
                          │  • WS hub: fan-out, presence│
                          │  • Orchestrator: turn lock, │
-                         │    prompt build, tool loop  │
+                         │    retrieve, 1 LLM call     │
                          │  • Embedder (bge-small)     │
                          └───┬───────────┬─────────┬───┘
                              │           │         │
-                    Postgres+pgvector   Anthropic  Open-Meteo
-                    (sessions, msgs,    API (LLM)  (weather)
-                     plan, kb_chunks,
+                    Postgres+pgvector   LLM        Open-Meteo
+                    (sessions, msgs,    (any       (weather)
+                     plan, kb_chunks,   provider)
                      LISTEN/NOTIFY)
 ```
 
@@ -41,24 +41,35 @@ Events (JSON over WS): `message.created`, `bot.token`, `bot.done`, `plan.updated
 - Reconnect: client sends `last_seq`; server replays missed events from `messages`/`plan_versions`.
 - **Turn lock**: one bot turn per session at a time. Messages arriving mid-turn are stored and batched into the next turn (so 3 friends typing at once produce one coherent answer, not three).
 
-## 4. Bot orchestration
+## 4. Bot orchestration — a pipeline, not an agent loop
 
-Per turn, the orchestrator assembles:
+The bot is deliberately built for a **very small, cheap model**. Instead of letting the model decide which tools to call (needs a strong, tool-calling model), the **orchestrator does retrieval deterministically** and makes **one LLM call per turn**:
 
-- **System prompt**: role (NE India group-trip planner), rules (facts only via tools, cite KB ids, add "verify before travel" for permits/seasons, reconcile participants, ask clarifying questions sparingly), today's date.
-- **Group context**: participant list, extracted preferences per person (rolling, maintained by a cheap summariser call every N messages).
-- **Current plan** (JSON) so the bot edits rather than rewrites.
-- **Recent messages** with `[Name]:` prefixes; older ones replaced by the rolling summary.
+1. **Turn lock** — take the session's bot turn; batch queued human messages.
+2. **Retrieve (no LLM)** — `search_kb` with the latest messages (hybrid RAG, top-4, metadata filters inferred by simple rules/keywords: state, season, permit words → `high_risk`); `get_weather` when a place + month/dates are mentioned (coordinates from the KB).
+3. **Prompt (short)** — system rules + participants and their preferences + the current plan (compact JSON) + last ~10 messages with `[Name]:` prefixes + the retrieved chunks in a delimited block.
+4. **One LLM call** — returns **structured JSON**: `{ "reply": "...", "plan_ops": [...], "cites": ["kb_id", ...] }`. `reply` is streamed to clients as it is generated.
+5. **Validate** — JSON schema check; one automatic repair retry; if still invalid, send the reply text only and skip plan edits (never corrupt the plan).
+6. **Apply** — `plan_ops` (add/move/remove item, set day title, note) validated against the plan schema, versioned, broadcast as `plan.updated`.
 
-Tool loop (Anthropic tool use, streaming):
+System-prompt rules: facts only from the retrieved block, cite KB ids, add "verify before travel" for permits/seasons, say "I don't have that" when the block is empty, reconcile participants, keep replies short.
 
-| Tool | Purpose | Notes |
-|---|---|---|
-| `search_kb(query, state?, type?, season?, k)` | RAG | Returns chunks with id, text, source, last_verified |
-| `get_weather(place, days)` | Open-Meteo forecast / climatology | Coordinates come from the KB |
-| `update_plan(ops[])` | add/move/remove item, set day title, note | Server validates against plan schema, bumps version, broadcasts `plan.updated` |
+### 4.1 Pluggable, small-by-default LLM
 
-The bot never answers factual place/permit questions from memory: the system prompt forbids it and the eval checks it.
+The orchestrator talks to a single port:
+
+```
+LLM.chat(messages, *, stream=True, json_schema=None) -> async iterator of text deltas
+```
+
+- **Adapter**: [LiteLLM](https://github.com/BerriAI/litellm) (one OpenAI-style interface over 100+ providers) — or, if we want zero dependency, a ~80-line adapter for any **OpenAI-compatible endpoint** plus one for Anthropic. Chosen in the ADR; either way the app code never imports a vendor SDK.
+- **Config only** (env): `LLM_MODEL=<provider>/<model>`, `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_JSON_MODE=schema|json_object|prompt` (how to force JSON on that model), optional `LLM_FALLBACK_MODEL`.
+- **Works with**: hosted small models (Claude Haiku-class, GPT mini/nano-class, Gemini Flash-Lite-class, Mistral small, DeepSeek) and **self-hosted open models** (Qwen/Llama/Gemma 3–8B via Ollama, vLLM or llama.cpp) — anything that speaks the OpenAI-compatible API.
+- **No dependence on native tool calling or vendor-specific features** (prompt caching, extended thinking), so the weakest plausible model still works. JSON mode falls back to prompt-only + validation + repair.
+- **Summariser** (rolling session summary) uses the same port, same or cheaper model.
+- **Pick the model by eval, not by brand**: the eval harness runs the same set against N configured models and reports quality + cost; ship the cheapest that clears the bar.
+
+Why this is cheap: retrieval is local (embeddings in-process, pgvector), the prompt is ~1.5–2.5k tokens, one call per turn. At small-model prices a 30-turn session is on the order of **a fraction of a cent to a few cents**, and **zero marginal cost** if self-hosted.
 
 ## 5. RAG
 
@@ -89,12 +100,13 @@ Single page, mobile-first, vanilla JS or Preact (no heavy build): header (code c
 
 - Per-session token budget and message rate limit; friendly cut-off.
 - Join/code lookups rate-limited; tokens stored hashed; codes never logged in full.
-- KB text and user messages are placed in delimited data blocks; tools can only write the plan, nothing else.
-- Rough cost: a 30-turn session ≈ 100–200k input tokens with caching → low single-digit cents–tens of cents depending on model tier.
+- KB text and user messages are placed in delimited data blocks; the model's only write effect is validated `plan_ops` on the plan, nothing else.
+- Rough cost: ~2k input + ~300 output tokens per turn × 30 turns ≈ 60k in / 9k out per session → well under a cent on small hosted models; free on a self-hosted one.
+- Small-model risks handled by design: weaker instruction-following → retrieval is deterministic and the model only writes text + JSON; hallucination → answer only from the retrieved block, "I don't have that" fallback, eval subset for permits/seasons.
 
 ## 9. Deployment (cloud-agnostic)
 
-One container image + managed Postgres with pgvector + a secret for the Anthropic key.
+One container image + managed Postgres with pgvector + an LLM API key **or** an internal URL of a self-hosted model server (Ollama/vLLM).
 
 | Piece | AWS | GCP | Anywhere |
 |---|---|---|---|
@@ -111,7 +123,7 @@ Local: `docker compose up` (app + postgres).
 |---|---|
 | 0002 | App stack: Python/FastAPI, WebSocket, Postgres LISTEN/NOTIFY fan-out, no Redis |
 | 0003 | Postgres+pgvector for RAG; local bge-small embeddings (vs Voyage/managed KB) |
-| 0004 | LLM vendor/model: Anthropic API direct, tool-use orchestration (vs Bedrock/Vertex) |
+| 0004 | LLM access: provider-agnostic port (LiteLLM or thin OpenAI-compatible adapter), small model by default, pipeline orchestration with JSON output (vs vendor SDK + native tool use) |
 | 0005 | Anonymous sessions: join code + participant token, no accounts |
 
 ## 11. Build plan (after approval, ~2 weeks)

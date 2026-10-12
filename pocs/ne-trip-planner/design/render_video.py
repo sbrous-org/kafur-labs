@@ -38,7 +38,7 @@ def main() -> None:
             page = browser.new_page(viewport={"width": 1280, "height": 720})
             page.goto((HERE / "flow-video.html").as_uri() + "?render")
             duration = page.evaluate("window.DURATION")
-            total = int(duration * args.fps) + args.fps  # hold last frame 1s
+            total = int(duration * args.fps)
             for i in range(total):
                 page.evaluate("t => window.seek(t)", min(i / args.fps, duration))
                 page.screenshot(path=str(frames / f"f{i:05d}.png"))

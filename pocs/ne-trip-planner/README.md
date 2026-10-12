@@ -2,7 +2,7 @@
 
 > **Status: design review — nothing implemented yet.** Open
 > [`design/index.html`](design/index.html) in a browser for the visual design,
-> watch the 69 s flow video [`design/ne-trip-planner-flow.mp4`](design/ne-trip-planner-flow.mp4)
+> watch the 58 s flow video [`design/ne-trip-planner-flow.mp4`](design/ne-trip-planner-flow.mp4)
 > (source: `design/flow-video.html`, re-render with `python design/render_video.py`),
 > or read [`REQUIREMENTS.md`](REQUIREMENTS.md) and [`DESIGN.md`](DESIGN.md).
 
@@ -10,7 +10,7 @@
 
 A group of friends can open one link, join a shared session by code, and — chatting
 with a single bot that is grounded in a curated Northeast India knowledge base —
-converge on a concrete multi-day itinerary in one sitting, with ≥80% of bot
+converge on a concrete multi-day itinerary in one sitting — **using a very small, cheap, swappable model** — with ≥80% of bot
 answers rated accurate and grounded, and shared updates reaching every
 participant in under 1 second (p95).
 
@@ -22,7 +22,7 @@ live itinerary**. It reuses Oxomiai's KB data and schema as a seed.
 
 Cloud-agnostic containers: one FastAPI service (REST + WebSocket) + a static
 frontend, Postgres with pgvector for sessions, messages, the shared plan and RAG
-chunks, Claude via the Anthropic API with tool use. No login — link + 6-char
+chunks, and **a small, cheap LLM behind a pluggable provider-agnostic port** (hosted or self-hosted; one call per turn, JSON output). No login — link + 6-char
 join code + display name. Full detail in `DESIGN.md`.
 
 Deliberately cut: accounts, payments/bookings, live transport data, maps, voice,
@@ -30,7 +30,7 @@ offline/PWA, multi-language.
 
 ## Exit criteria
 
-- **Promote** — meets all of: ≥80% helpful+grounded on the eval set (`REQUIREMENTS.md` §8),
+- **Promote** — meets all of (on the cheapest model that clears the bar): ≥80% helpful+grounded on the eval set (`REQUIREMENTS.md` §8),
   0 fabricated permit/season facts on the permit test subset, plan reached
   within ≤15 turns in ≥70% of scripted group scenarios, p95 fan-out < 1 s.
   Then move to `products/` and write the ADRs listed in `DESIGN.md` §10.

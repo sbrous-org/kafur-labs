@@ -13,7 +13,8 @@ A very simple web bot where a group plans a Northeast India trip together, in on
 | D1 | New standalone POC (`pocs/ne-trip-planner/`); **reuses Oxomiai's `knowledge_base/*.jsonl` + schema as seed data**, own backend. |
 | D2 | Geography: **all eight NE states, Assam deepest** (Assam, Meghalaya, Arunachal Pradesh, Nagaland, Manipur, Mizoram, Tripura, Sikkim). |
 | D3 | Join model: **no login**. Opening the link creates a session; others join with a **6-char code** + display name. |
-| D4 | Hosting: **cloud-agnostic** — containers + Postgres (pgvector) + Anthropic API. Maps cleanly to AWS/GCP (see DESIGN §9). |
+| D4 | Hosting: **cloud-agnostic** — containers + Postgres (pgvector) + **any LLM provider** (hosted or self-hosted). Maps cleanly to AWS/GCP (see DESIGN §9). |
+| D5 | LLM: **very small, cheap model by default**, and the model/provider is **pluggable by config** — not tied to Claude or any vendor. |
 
 ## 3. User stories
 
@@ -36,7 +37,9 @@ A very simple web bot where a group plans a Northeast India trip together, in on
 | F4 | Real-time message fan-out (WebSocket); presence ("Asha is typing / online"). | Must |
 | F5 | Bot replies streamed token-by-token to all participants; one bot turn at a time per session (queued). | Must |
 | F6 | RAG over NE KB: hybrid retrieval (vector + keyword) with metadata filters (state, season, type, permit); answers cite KB entries. | Must |
-| F7 | Tools available to the bot: `search_kb`, `get_weather` (Open-Meteo), `update_plan`. Bot may not state facts about places/permits without a tool result. | Must |
+| F7 | Per turn the orchestrator retrieves KB chunks (`search_kb`) and weather (Open-Meteo) deterministically, then makes **one LLM call** that returns structured JSON (`reply`, `plan_ops`, `cites`). Bot may not state place/permit facts that are not in the retrieved chunks. | Must |
+| F15 | **Pluggable LLM**: one `LLM.chat()` port; model, base URL, key and JSON-mode chosen by env config; works with hosted small models and self-hosted open models (OpenAI-compatible API); no reliance on native tool calling. Optional fallback model. | Must |
+| F16 | Eval harness can run the same scenario set against several configured models and report quality + cost per model. | Should |
 | F8 | Shared itinerary: structured (days → items: place, note, duration, travel hint, added-by); live-updated; versioned. | Must |
 | F9 | Members can remove or reorder plan items by hand; bot sees those edits. | Should |
 | F10 | Export plan as shareable read-only page / print / copy-as-text. | Should |
@@ -51,11 +54,11 @@ A very simple web bot where a group plans a Northeast India trip together, in on
 |---|---|
 | N1 | Fan-out latency (message → other clients) p95 < 1 s; bot first token p95 < 3 s. |
 | N2 | UI: one page, mobile-first, no install; works on 3G-ish connections (small bundle). |
-| N3 | Cost guardrails: per-session token budget and per-IP/session rate limits; hard stop with friendly message. |
+| N3 | Cost guardrails: per-session token budget and per-IP/session rate limits; hard stop with friendly message. Target LLM cost ≤ ~2 cents per 30-turn session on a hosted small model; no vendor lock-in. |
 | N4 | Privacy: no accounts, no PII beyond display name; messages stored only for session life; join codes are the only secret. |
-| N5 | Security: rate-limited code lookups (anti-brute-force), tokens unguessable (≥128-bit), CORS locked, prompt-injection-resistant tool design (KB text is data, never instructions). |
+| N5 | Security: rate-limited code lookups (anti-brute-force), tokens unguessable (≥128-bit), CORS locked, prompt-injection-resistant design (model output can only produce validated plan edits) (KB text is data, never instructions). |
 | N6 | Deployable from one `docker compose up` locally and one container image + managed Postgres in cloud. |
-| N7 | Observability: structured logs, per-turn trace (retrieved chunks, tool calls, tokens, latency). |
+| N7 | Observability: structured logs, per-turn trace (retrieved chunks, model used, tokens, latency). |
 | N8 | Works with ≥2 instances behind a load balancer (fan-out must not assume a single process) — design requirement, may be exercised only in a test. |
 
 ## 6. Knowledge base (RAG) requirements
@@ -73,7 +76,7 @@ User accounts/login, payments, bookings, live transport/hotel availability, maps
 ## 8. Evaluation
 
 - **Set**: ~30 scripted multi-person scenarios (2–4 simulated participants) + ~30 single-question KB probes incl. a **permit/season subset** (≥10) with known-correct answers.
-- **Metrics**: grounded+helpful ≥80% (manual rubric); fabricated permit/season facts = 0; plan completed in ≤15 turns in ≥70% of scenarios; p95 fan-out < 1 s and first-token < 3 s under 5 concurrent sessions.
+- **Metrics**: grounded+helpful ≥80% (manual rubric) **on the chosen small model** — the eval is run per candidate model and the cheapest passing one is selected; fabricated permit/season facts = 0; plan completed in ≤15 turns in ≥70% of scenarios; p95 fan-out < 1 s and first-token < 3 s under 5 concurrent sessions.
 - **Rubric**: reuse Oxomiai's `eval/README.md` scale; add "did the bot attribute and reconcile participants' preferences".
 
 ## 9. Open questions for review
@@ -82,7 +85,8 @@ User accounts/login, payments, bookings, live transport/hotel availability, maps
 |---|---|---|
 | Q1 | Should the bot reply to **every** message, or only when addressed? In a group, always-reply is noisy. | Bot replies to every message by default (it's a "planning room"); prefix `//` to chat with friends only. Alt: reply only on `@bot`. |
 | Q2 | Can any member edit/delete the plan, or only the bot? | Any member can remove/reorder; bot does adds. |
-| Q3 | Embedding model — Anthropic has none. | Local `bge-small` (no extra vendor, free). Alt: Voyage AI API. |
-| Q4 | LLM tier: Sonnet quality vs Haiku cost for chat. | Sonnet-class for chat; configurable; Haiku for summaries. |
+| Q3 | Embedding model (must also be vendor-neutral). | Local `bge-small` (free, in-process). Alt: any OpenAI-compatible embeddings endpoint. |
+| Q4 | ~~LLM tier~~ **Decided: very small/cheap model, pluggable.** Remaining: which 2–3 models to benchmark first? | Candidates: one hosted mini/flash/haiku-class model, one 7–8B open model via Ollama. Cheapest that clears the eval bar wins. |
+| Q7 | LiteLLM dependency, or a thin own adapter for OpenAI-compatible endpoints? | LiteLLM (fastest, widest coverage); revisit if it gets heavy. |
 | Q5 | Where does the KB content for 7 new states come from? | You curate/provide sources; I draft entries with citations for your review. |
 | Q6 | Host target for the demo (Fly/Render/Cloud Run/…)? | Any container host with WebSocket support + managed Postgres w/ pgvector. |

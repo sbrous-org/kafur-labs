@@ -100,11 +100,6 @@ body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-syst
 .as{background:rgba(255,255,255,.06);border-left:4px solid var(--gold);border-radius:8px;padding:12px 14px;font-size:19px;line-height:1.35}
 .as b{color:var(--gold)}
 /* decisions */
-#dec{inset:0;padding:24px 70px}
-#dec h2{font-size:32px;margin:0 0 14px}
-.q{display:flex;gap:14px;align-items:baseline;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:20px}
-.q b{color:var(--gold);min-width:34px}
-.q span{color:var(--mute);font-size:17px}
 </style>
 </head>
 <body>
@@ -116,7 +111,6 @@ body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-syst
     <span class="step" data-a="21" data-b="40">3 · Plan together</span>
     <span class="step" data-a="40" data-b="46">4 · Grounded answers</span>
     <span class="step" data-a="46" data-b="58">5 · Under the hood</span>
-    <span class="step" data-a="58" data-b="70">6 · Decide</span>
   </div>
 
   <div id="stage">
@@ -155,15 +149,15 @@ body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-syst
                 <div class="msg me" data-t="21.6"><small>Asha</small><span data-type="7 days in October. I want wildlife!" data-t="21.6" data-cps="30"></span></div>
                 <div class="msg" data-t="24.2"><small>Ravi</small><span data-type="I'd rather do culture plus the Meghalaya caves." data-t="24.2" data-cps="34"></span></div>
                 <div class="think" data-t="26.0" data-hide="28.9">Bot is reading both messages&hellip;</div>
-                <div class="tool" data-t="26.5">search_kb("wildlife Assam October") &rarr; 3 chunks</div>
-                <div class="tool" data-t="27.3">search_kb("Meghalaya caves culture") &rarr; 2 chunks</div>
-                <div class="tool" data-t="28.1">get_weather("Kaziranga", "Oct") &rarr; light rain, 24-31 C</div>
+                <div class="tool" data-t="26.5">retrieved 3 KB chunks: wildlife, Assam, October</div>
+                <div class="tool" data-t="27.3">retrieved 2 KB chunks: Meghalaya caves, culture</div>
+                <div class="tool" data-t="28.1">weather (Open-Meteo): Kaziranga, Oct, light rain, 24-31 C</div>
                 <div class="msg bot" data-t="28.9"><small>Bot</small><span data-type="Fun mix! Kaziranga for wildlife (park reopens mid-Oct, best Nov-Apr) then Shillong and Cherrapunji for caves and culture. I drafted a 7-day plan on the right." data-t="28.9" data-cps="46"></span> <span class="cite" data-t="31.0">kaziranga</span><span class="cite" data-t="31.0">mawsmai-cave</span></div>
                 <div class="msg" data-t="35.4"><small>Mira</small><span data-type="Can we squeeze in Majuli?" data-t="35.4" data-cps="30"></span></div>
-                <div class="tool" data-t="37.0">search_kb("Majuli ferry Jorhat") &rarr; 2 chunks</div>
+                <div class="tool" data-t="37.0">retrieved 2 KB chunks: Majuli, ferry, Jorhat</div>
                 <div class="msg bot" data-t="37.6"><small>Bot</small><span data-type="Majuli needs 1 night and a ferry from Jorhat. I added it before Meghalaya - Asha, Ravi, ok with that?" data-t="37.6" data-cps="48"></span> <span class="cite" data-t="39.4">majuli</span></div>
                 <div class="msg me" data-t="40.4"><small>Asha</small><span data-type="Do we need permits anywhere?" data-t="40.4" data-cps="30"></span></div>
-                <div class="tool" data-t="41.9">search_kb("permits NE states", high_risk=true) &rarr; 2 chunks</div>
+                <div class="tool" data-t="41.9">retrieved 2 KB chunks: permits (flagged high-risk)</div>
                 <div class="msg bot" data-t="42.5"><small>Bot</small><span data-type="Not for Assam or Meghalaya (Indian nationals). Arunachal needs an ILP - verify before you travel." data-t="42.5" data-cps="44"></span> <span class="cite" data-t="44.5">permits-arunachal &middot; verified 2026-03</span></div>
               </div>
               <div id="comp"><span>Message the bot&hellip; (start with // to chat only with friends)</span><b>Send</b></div>
@@ -215,7 +209,7 @@ body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-syst
     <div class="toast abs" data-t="20.0" data-hide="22.0">Mira joined the session</div>
 
     <!-- callouts scene 3/4 -->
-    <div class="callout abs" style="left:480px;top:440px" data-t="26.5" data-hide="28.5">Tools run server-side. Facts come from the knowledge base.</div>
+    <div class="callout abs" style="left:480px;top:440px" data-t="26.5" data-hide="28.5">Facts are retrieved first, then a small LLM writes the reply.</div>
     <div class="callout abs" style="left:800px;top:445px" data-t="32.6" data-hide="35.0">Plan updates for everyone, live</div>
     <div class="callout abs" style="left:420px;top:150px" data-t="44.8" data-hide="46.0">Source + verified date</div>
 
@@ -234,9 +228,9 @@ body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-syst
         <rect class="node" x="40" y="220" width="130" height="60" rx="8"/><text x="105" y="255" text-anchor="middle">Ravi</text>
         <rect class="node" x="40" y="320" width="130" height="60" rx="8"/><text x="105" y="355" text-anchor="middle">Mira</text>
         <rect class="node" x="270" y="215" width="150" height="70" rx="8"/><text x="345" y="245" text-anchor="middle">WebSocket hub</text><text class="sm" x="345" y="264" text-anchor="middle">fan-out + presence</text>
-        <rect class="node" x="440" y="100" width="140" height="80" rx="8"/><text x="510" y="132" text-anchor="middle">Orchestrator</text><text class="sm" x="510" y="151" text-anchor="middle">turn lock</text><text class="sm" x="510" y="167" text-anchor="middle">prompt + tool loop</text>
+        <rect class="node" x="440" y="100" width="140" height="80" rx="8"/><text x="510" y="132" text-anchor="middle">Orchestrator</text><text class="sm" x="510" y="151" text-anchor="middle">turn lock</text><text class="sm" x="510" y="167" text-anchor="middle">prompt + 1 LLM call</text>
         <rect class="node" x="420" y="380" width="180" height="90" rx="8"/><text x="510" y="410" text-anchor="middle">Postgres + pgvector</text><text class="sm" x="510" y="430" text-anchor="middle">messages, plan versions</text><text class="sm" x="510" y="446" text-anchor="middle">KB chunks, NOTIFY</text>
-        <rect class="ext" x="630" y="40" width="120" height="60" rx="8"/><text x="690" y="68" text-anchor="middle">Claude API</text><text class="sm" x="690" y="86" text-anchor="middle">tool use</text>
+        <rect class="ext" x="620" y="40" width="140" height="60" rx="8"/><text x="690" y="68" text-anchor="middle">Any LLM</text><text class="sm" x="690" y="86" text-anchor="middle">small, cheap, swappable</text>
         <rect class="ext" x="630" y="185" width="120" height="60" rx="8"/><text x="690" y="213" text-anchor="middle">Open-Meteo</text><text class="sm" x="690" y="231" text-anchor="middle">weather</text>
         <g id="pk"></g>
       </svg>
@@ -244,22 +238,12 @@ body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-syst
         <div class="as" data-t="46.3" data-hide="48.2"><b>1</b> A message goes to the WebSocket hub.</div>
         <div class="as" data-t="48.2" data-hide="50.2"><b>2</b> It is stored in Postgres, then every instance is notified (LISTEN/NOTIFY).</div>
         <div class="as" data-t="50.2" data-hide="52.0"><b>3</b> The hub fans it out to everyone in the session, under 1 s.</div>
-        <div class="as" data-t="52.0" data-hide="54.2"><b>4</b> The orchestrator takes the turn lock and builds the prompt: rules, who prefers what, the current plan, recent chat.</div>
-        <div class="as" data-t="54.2" data-hide="56.2"><b>5</b> Claude calls tools: search_kb (pgvector + keyword), get_weather.</div>
-        <div class="as" data-t="56.2" data-hide="58"><b>6</b> update_plan is validated, versioned in Postgres and broadcast to every screen.</div>
+        <div class="as" data-t="52.0" data-hide="54.2"><b>4</b> The orchestrator takes the turn lock, retrieves KB chunks (pgvector + keyword) and weather, then builds a short prompt.</div>
+        <div class="as" data-t="54.2" data-hide="56.2"><b>5</b> One call to a small, cheap LLM (any provider) returns the reply and plan edits as JSON.</div>
+        <div class="as" data-t="56.2" data-hide="58"><b>6</b> Plan edits are validated, versioned in Postgres and broadcast to every screen.</div>
       </div>
     </div>
 
-    <!-- DECISIONS (scene 6) -->
-    <div id="dec" class="abs" data-t="58">
-      <h2>Decisions we need from you</h2>
-      <div class="q" data-t="58.6"><b>Q1</b> Bot replies to every message, or only when addressed?<span>default: every message; // = friends only</span></div>
-      <div class="q" data-t="60.0"><b>Q2</b> Who can edit the plan?<span>default: anyone removes/reorders, bot adds</span></div>
-      <div class="q" data-t="61.4"><b>Q3</b> Embeddings<span>default: local bge-small (alt: Voyage AI)</span></div>
-      <div class="q" data-t="62.8"><b>Q4</b> LLM tier<span>default: Sonnet-class chat, Haiku-class summaries</span></div>
-      <div class="q" data-t="64.2"><b>Q5</b> Who supplies the KB sources for 7 new states?<span>default: you approve, I draft with citations</span></div>
-      <div class="q" data-t="65.6"><b>Q6</b> Demo host with WebSocket + Postgres<span>Fly / Render / Cloud Run / ECS</span></div>
-    </div>
   </div>
 
   <div id="cap">
@@ -275,14 +259,13 @@ body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-syst
     <div class="capline" data-t="35.4" data-hide="40.2">Anyone can add a request; the bot reconciles and updates the plan.</div>
     <div class="capline" data-t="40.3" data-hide="46">Risky facts like <b>permits</b> carry a source, a verified date and a reminder to double-check.</div>
     <div class="capline" data-t="46.3" data-hide="52.0">Behind the scenes: one app container and one Postgres database.</div>
-    <div class="capline" data-t="52.0" data-hide="58">One bot turn at a time per session, so a busy group still gets one coherent answer.</div>
-    <div class="capline" data-t="58.3">Please review the flow and settle these six questions. Then ADRs, then build.</div>
+    <div class="capline" data-t="52.0" data-hide="58">One bot turn at a time per session. The model is swappable: any provider, small by default.</div>
   </div>
   <div id="barbg"><div id="bar"></div></div>
 </div>
 
 <script>
-const DUR = 68;
+const DUR = 58;
 const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
 const timed=[...document.querySelectorAll('[data-t]')];
 const typed=[...document.querySelectorAll('[data-type]')];
@@ -294,8 +277,8 @@ const packets=[
  ['p_b2',46.5,1.4,false],
  ['p_hp',48.4,1.5,false],
  ['p_b1',50.4,1.3,true],['p_b2',50.5,1.3,true],['p_b3',50.6,1.3,true],
- ['p_ho',52.3,1.6,false],
- ['p_oc',54.4,0.9,false],['p_oc',55.3,0.9,true],['p_op',54.8,1.2,false],['p_ow',55.4,0.8,false],
+ ['p_ho',52.3,1.6,false],['p_op',53.0,1.0,false],['p_ow',53.2,0.8,false],
+ ['p_oc',54.4,0.9,false],['p_oc',55.3,0.9,true],
  ['p_op',56.4,1.2,false],['p_hp',57.0,0.9,true]
 ];
 const NS='http://www.w3.org/2000/svg';
