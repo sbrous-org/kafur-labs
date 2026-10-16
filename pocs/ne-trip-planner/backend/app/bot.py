@@ -136,6 +136,11 @@ async def _turn(app, sid, new_msgs) -> None:
     valid = {c["id"] for c in chunks} | {it["kb_id"] for d in plan["days"] for it in d["items"] if it.get("kb_id")}
     by_id = {c["id"]: c for c in chunks}
     cited = [i for i in dict.fromkeys(re.findall(r"\[([a-z0-9_\-]+)\]", reply)) if i in by_id] or [c["id"] for c in chunks[:2]]
+    # Citations are shown as chips under the bubble (below); the inline [kb_id]
+    # markers the model used to earn them have no further use and read as a bug
+    # to a user ("why is there a stray bracket here"), so strip them from the text.
+    reply = re.sub(r"\s*\[[a-z0-9_\-]+\]", "", reply).strip()
+    reply = re.sub(r"[ \t]{2,}", " ", reply)
     meta = {"cites": [{"id": i, "title": by_id[i]["title"], "high_risk": by_id[i]["high_risk"],
                         "verified": by_id[i]["last_verified"]} for i in cited]}
     if not reply:
