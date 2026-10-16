@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NE Trip Planner — flow walkthrough</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/*
+  Timeline-driven animation. Every element with data-t="<sec>" appears at that
+  time and (optionally) disappears at data-hide="<sec>". window.seek(t) renders
+  the whole frame from scratch, so the video renderer (render_video.py) can
+  capture any frame deterministically. Open this file directly to play live:
+  space = pause/play, click the bar = scrub.
+*/
+:root{--bg:#0f1f19;--panel:#16302a;--ink:#eaf2ee;--mute:#9db3aa;--green:#2f9e72;--green2:#1f7a5a;--soft:#e3f1ea;--terra:#e0762a;--gold:#e2b24a;--paper:#fbfaf6;--line:#d9ded8;--text:#1d2421;--tmute:#5d6762}
+*{box-sizing:border-box}
+html,body{margin:0;background:#000}
+body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"DejaVu Sans",sans-serif;color:var(--ink)}
+#frame{position:relative;width:1280px;height:720px;background:radial-gradient(1200px 700px at 20% 0%,#17382d 0%,var(--bg) 60%);overflow:hidden}
+/* top steps */
+#steps{position:absolute;left:0;right:0;top:0;height:56px;display:flex;align-items:center;gap:10px;padding:0 28px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand{font-weight:800;letter-spacing:.3px;margin-right:12px}
+.brand i{color:var(--green);font-style:normal}
+.step{font-size:13px;color:var(--mute);padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);transition:none}
+.step.on{background:var(--green);border-color:var(--green);color:#06150f;font-weight:700}
+.step.done{color:var(--ink)}
+/* caption */
+#cap{position:absolute;left:0;right:0;bottom:0;height:92px;background:rgba(0,0,0,.35);border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;padding:0 80px;text-align:center}
+.capline{position:absolute;left:80px;right:80px;font-size:23px;line-height:1.35}
+.capline b{color:var(--gold)}
+#bar{position:absolute;left:0;bottom:0;height:5px;background:var(--green);width:0}
+#barbg{position:absolute;left:0;right:0;bottom:0;height:5px;background:rgba(255,255,255,.1);cursor:pointer}
+/* stage */
+#stage{position:absolute;left:0;right:0;top:56px;bottom:92px}
+.abs{position:absolute}
+/* title */
+#title{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#title h1{font-size:64px;margin:0 0 10px}
+#title h1 i{color:var(--green);font-style:normal}
+#title p{font-size:24px;color:var(--mute);margin:4px 0}
+/* browser */
+#browser{left:80px;top:14px;width:1120px;height:506px;background:var(--paper);border-radius:12px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.55);color:var(--text)}
+#tb{height:36px;background:#e9ece8;display:flex;align-items:center;gap:7px;padding:0 12px;border-bottom:1px solid var(--line)}
+.dot{width:11px;height:11px;border-radius:50%;background:#c9cec8}
+#url{margin-left:14px;flex:1;max-width:520px;height:22px;border-radius:11px;background:#fff;border:1px solid var(--line);font-size:13px;line-height:20px;padding:0 12px;color:var(--tmute);font-family:ui-monospace,Menlo,monospace}
+#bbody{position:absolute;left:0;right:0;top:36px;bottom:0}
+/* home */
+#home{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+#home h2{margin:0;font-size:38px}
+#home p{margin:0;color:var(--tmute);font-size:18px}
+.spin{width:30px;height:30px;border:4px solid var(--soft);border-top-color:var(--green2);border-radius:50%;margin-top:12px}
+/* room */
+#room{inset:0}
+#rh{height:50px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:#fff}
+#rh b{font-size:16px}
+.chip{background:var(--soft);color:var(--green2);border-radius:999px;padding:3px 11px;font-weight:800;letter-spacing:1.5px;font-size:14px}
+.copy{font-size:13px;color:var(--tmute);border:1px solid var(--line);border-radius:7px;padding:3px 9px}
+#avs{margin-left:auto;display:flex;align-items:center}
+.av{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-left:-7px;border:2px solid #fff}
+#cols{position:absolute;left:0;right:0;top:50px;bottom:0;display:flex}
+#chat{flex:0 0 62%;display:flex;flex-direction:column;border-right:1px solid var(--line);min-width:0}
+#msgs{flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:12px 14px}
+.msg{max-width:80%;padding:8px 12px;border-radius:14px;font-size:15px;line-height:1.4;background:var(--soft)}
+.msg small{display:block;font-size:11.5px;color:var(--tmute);font-weight:700;margin-bottom:1px}
+.msg.me{align-self:flex-end;background:#d3ebdf}
+.msg.bot{align-self:flex-start;background:#fff;border:1.5px solid var(--green)}
+.cite{display:inline-block;font-size:11px;background:#fff1d9;color:#a4510f;border-radius:6px;padding:0 6px;margin:0 2px;font-weight:600}
+.tool{align-self:flex-start;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#38564a;background:#eef3f0;border:1px dashed #a8bdb3;border-radius:8px;padding:4px 9px}
+.think{align-self:flex-start;color:var(--tmute);font-size:13px;font-style:italic;padding:2px 6px}
+#comp{margin:8px 12px 12px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--tmute);font-size:14px;display:flex;justify-content:space-between;background:#fff}
+#comp b{color:var(--green2)}
+#plan{flex:1;padding:12px 14px;overflow:hidden;min-width:0;background:#fcfcfa}
+#plan h3{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.ver{font-size:12px;background:var(--soft);color:var(--green2);border-radius:6px;padding:2px 8px;font-weight:700}
+.day{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden;background:#fff}
+.day h4{margin:0;padding:5px 10px;background:var(--soft);font-size:12.5px}
+.item{padding:5px 10px;font-size:13.5px;border-top:1px solid var(--line)}
+.item small{display:block;color:var(--tmute);font-size:11.5px}
+/* modal */
+#nameModal{left:50%;top:50%;width:380px;margin:-90px 0 0 -190px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.35);padding:18px}
+#nameModal h4{margin:0 0 6px;font-size:18px}
+.field{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:15px;min-height:38px;background:#fff}
+.btn{display:inline-block;background:var(--green2);color:#fff;border-radius:8px;padding:8px 14px;font-weight:700;font-size:14px}
+/* join card */
+.join{right:112px;top:290px;width:310px;background:#fff;color:var(--text);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55);padding:14px;border:1px solid var(--line)}
+.join .who{font-size:12px;color:var(--tmute);font-weight:700;margin-bottom:6px}
+.join h4{margin:0 0 4px;font-size:17px}
+.toast{right:110px;top:70px;background:#10231c;border:1px solid var(--green);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:14px}
+.callout{background:var(--terra);color:#1b0d03;font-weight:700;font-size:14px;border-radius:8px;padding:6px 12px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+/* arch */
+#arch{inset:0}
+#arch svg{position:absolute;left:30px;top:6px;width:760px;height:520px}
+#arch .node{fill:#16302a;stroke:#2f9e72;stroke-width:1.6}
+#arch .ext{fill:#33280f;stroke:#e0762a;stroke-width:1.6}
+#arch text{fill:var(--ink);font-size:14px;font-family:inherit}
+#arch .sm{fill:var(--mute);font-size:11.5px}
+#arch .ln{stroke:#4b665b;stroke-width:1.6;fill:none}
+#arch .pk{fill:var(--gold)}
+#archstep{position:absolute;left:810px;top:30px;width:430px}
+.as{background:rgba(255,255,255,.06);border-left:4px solid var(--gold);border-radius:8px;padding:12px 14px;font-size:19px;line-height:1.35}
+.as b{color:var(--gold)}
+/* decisions */
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="steps">
+    <span class="brand">NE Trip <i>Planner</i></span>
+    <span class="step" data-a="4" data-b="13">1 · Open link</span>
+    <span class="step" data-a="13" data-b="21">2 · Invite &amp; join</span>
+    <span class="step" data-a="21" data-b="40">3 · Plan together</span>
+    <span class="step" data-a="40" data-b="46">4 · Grounded answers</span>
+    <span class="step" data-a="46" data-b="58">5 · Under the hood</span>
+  </div>
+
+  <div id="stage">
+    <!-- TITLE -->
+    <div id="title" class="abs" data-t="0" data-hide="4">
+      <h1>NE Trip <i>Planner</i></h1>
+      <p>Plan a Northeast India trip together, in one shared chat.</p>
+      <p style="font-size:18px">Flow &amp; design walkthrough &middot; POC design review</p>
+    </div>
+
+    <!-- BROWSER (scenes 1-4) -->
+    <div id="browser" class="abs" data-t="4" data-hide="46">
+      <div id="tb"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div id="url"><span data-type="netrip.app/" data-t="4.4" data-cps="14" data-hide="7.2"></span><span data-t="7.2">netrip.app/s/K7M4QX</span></div>
+      </div>
+      <div id="bbody">
+        <div id="home" class="abs" data-t="4" data-hide="7.2">
+          <h2>Plan your Northeast trip with friends</h2>
+          <p>Opening the link creates a new session for you.</p>
+          <div class="spin" data-t="5.6" data-hide="7.2"></div>
+          <p data-t="5.8" data-hide="7.2" style="font-size:15px">Creating session K7M4QX&hellip;</p>
+        </div>
+
+        <div id="room" class="abs" data-t="7.2">
+          <div id="rh">
+            <b>NE Trip Planner</b><span class="chip">K7M4QX</span><span class="copy" data-press="11.2">Copy invite link</span>
+            <div id="avs">
+              <span class="av" style="background:#1f7a5a" data-t="10.2">A</span>
+              <span class="av" style="background:#c2570c" data-t="16.8">R</span>
+              <span class="av" style="background:#6b5bd2" data-t="20.0">M</span>
+            </div>
+          </div>
+          <div id="cols">
+            <div id="chat">
+              <div id="msgs">
+                <div class="msg me" data-t="21.6"><small>Asha</small><span data-type="7 days in October. I want wildlife!" data-t="21.6" data-cps="30"></span></div>
+                <div class="msg" data-t="24.2"><small>Ravi</small><span data-type="I'd rather do culture plus the Meghalaya caves." data-t="24.2" data-cps="34"></span></div>
+                <div class="think" data-t="26.0" data-hide="28.9">Bot is reading both messages&hellip;</div>
+                <div class="tool" data-t="26.5">retrieved 3 KB chunks: wildlife, Assam, October</div>
+                <div class="tool" data-t="27.3">retrieved 2 KB chunks: Meghalaya caves, culture</div>
+                <div class="tool" data-t="28.1">weather (Open-Meteo): Kaziranga, Oct, light rain, 24-31 C</div>
+                <div class="msg bot" data-t="28.9"><small>Bot</small><span data-type="Fun mix! Kaziranga for wildlife (park reopens mid-Oct, best Nov-Apr) then Shillong and Cherrapunji for caves and culture. I drafted a 7-day plan on the right." data-t="28.9" data-cps="46"></span> <span class="cite" data-t="31.0">kaziranga</span><span class="cite" data-t="31.0">mawsmai-cave</span></div>
+                <div class="msg" data-t="35.4"><small>Mira</small><span data-type="Can we squeeze in Majuli?" data-t="35.4" data-cps="30"></span></div>
+                <div class="tool" data-t="37.0">retrieved 2 KB chunks: Majuli, ferry, Jorhat</div>
+                <div class="msg bot" data-t="37.6"><small>Bot</small><span data-type="Majuli needs 1 night and a ferry from Jorhat. I added it before Meghalaya - Asha, Ravi, ok with that?" data-t="37.6" data-cps="48"></span> <span class="cite" data-t="39.4">majuli</span></div>
+                <div class="msg me" data-t="40.4"><small>Asha</small><span data-type="Do we need permits anywhere?" data-t="40.4" data-cps="30"></span></div>
+                <div class="tool" data-t="41.9">retrieved 2 KB chunks: permits (flagged high-risk)</div>
+                <div class="msg bot" data-t="42.5"><small>Bot</small><span data-type="Not for Assam or Meghalaya (Indian nationals). Arunachal needs an ILP - verify before you travel." data-t="42.5" data-cps="44"></span> <span class="cite" data-t="44.5">permits-arunachal &middot; verified 2026-03</span></div>
+              </div>
+              <div id="comp"><span>Message the bot&hellip; (start with // to chat only with friends)</span><b>Send</b></div>
+            </div>
+            <div id="plan">
+              <h3>Shared plan <span class="ver"><span data-t="0" data-hide="32.5">empty</span><span data-t="32.5" data-hide="33.2">v1</span><span data-t="33.2" data-hide="33.9">v2</span><span data-t="33.9" data-hide="34.5">v3</span><span data-t="34.5" data-hide="35.0">v4</span><span data-t="35.0" data-hide="38.4">v5</span><span data-t="38.4"> v6 &middot; live</span></span></h3>
+              <div class="day" data-t="32.5"><h4>Day 1 &middot; Guwahati</h4>
+                <div class="item" data-t="32.5" data-flash>Kamakhya Temple<small>3 h &middot; added by Bot</small></div></div>
+              <div class="day" data-t="33.2"><h4>Day 2-3 &middot; Kaziranga</h4>
+                <div class="item" data-t="33.2" data-flash>Jeep safari, Central range<small>4 h &middot; added by Bot (for Asha)</small></div></div>
+              <div class="day" data-t="38.4"><h4>Day 4 &middot; Majuli</h4>
+                <div class="item" data-t="38.4" data-flash>Majuli island, 1 night<small>ferry from Jorhat &middot; added by Bot (for Mira)</small></div></div>
+              <div class="day" data-t="33.9"><h4>Day 5-6 &middot; Meghalaya</h4>
+                <div class="item" data-t="33.9" data-flash>Living root bridges, Cherrapunji<small>day trip &middot; added by Bot (for Ravi)</small></div>
+                <div class="item" data-t="34.5" data-flash>Mawsmai Cave<small>1 h &middot; added by Bot</small></div></div>
+              <div class="day" data-t="35.0"><h4>Day 7 &middot; Shillong</h4>
+                <div class="item" data-t="35.0" data-flash>Don Bosco Museum, then fly out<small>added by Bot</small></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- name modal -->
+        <div id="nameModal" class="abs" data-t="7.6" data-hide="10.2">
+          <h4>What should friends call you?</h4>
+          <div class="field"><span data-type="Asha" data-t="8.3" data-cps="6"></span></div>
+          <span class="btn" data-press="9.8">Start planning</span>
+        </div>
+
+        <div class="callout abs" style="left:300px;top:70px" data-t="10.8" data-hide="13.5">Invite: share this link or the code</div>
+      </div>
+    </div>
+
+    <!-- JOIN CARDS (scene 2) -->
+    <div class="join abs" data-t="13.6" data-hide="17.0">
+      <div class="who">Ravi's phone &middot; opens netrip.app</div>
+      <h4>Join a trip</h4>
+      <div class="field" style="min-height:34px"><span data-type="K7M4QX" data-t="14.2" data-cps="9"></span></div>
+      <div class="field" style="min-height:34px"><span data-type="Ravi" data-t="15.2" data-cps="6"></span></div>
+      <span class="btn" data-press="16.4">Join</span>
+    </div>
+    <div class="join abs" data-t="17.4" data-hide="20.4">
+      <div class="who">Mira's laptop &middot; clicks the shared link</div>
+      <h4>Join a trip</h4>
+      <div class="field" style="min-height:34px"><span style="color:var(--tmute)">K7M4QX (from link)</span></div>
+      <div class="field" style="min-height:34px"><span data-type="Mira" data-t="18.2" data-cps="6"></span></div>
+      <span class="btn" data-press="19.5">Join</span>
+    </div>
+    <div class="toast abs" data-t="16.8" data-hide="19.0">Ravi joined the session</div>
+    <div class="toast abs" data-t="20.0" data-hide="22.0">Mira joined the session</div>
+
+    <!-- callouts scene 3/4 -->
+    <div class="callout abs" style="left:480px;top:440px" data-t="26.5" data-hide="28.5">Facts are retrieved first, then a small LLM writes the reply.</div>
+    <div class="callout abs" style="left:800px;top:445px" data-t="32.6" data-hide="35.0">Plan updates for everyone, live</div>
+    <div class="callout abs" style="left:420px;top:150px" data-t="44.8" data-hide="46.0">Source + verified date</div>
+
+    <!-- ARCHITECTURE (scene 5) -->
+    <div id="arch" class="abs" data-t="46" data-hide="58">
+      <svg viewBox="0 0 760 520">
+        <path class="ln" id="p_b1" d="M170 150 L270 235"/>
+        <path class="ln" id="p_b2" d="M170 250 L270 250"/>
+        <path class="ln" id="p_b3" d="M170 350 L270 265"/>
+        <path class="ln" id="p_hp" d="M345 280 L440 400"/>
+        <path class="ln" id="p_ho" d="M345 220 L440 150"/>
+        <path class="ln" id="p_oc" d="M580 130 L630 85"/>
+        <path class="ln" id="p_ow" d="M580 160 L630 200"/>
+        <path class="ln" id="p_op" d="M510 180 L510 380"/>
+        <rect class="node" x="40" y="120" width="130" height="60" rx="8"/><text x="105" y="155" text-anchor="middle">Asha</text>
+        <rect class="node" x="40" y="220" width="130" height="60" rx="8"/><text x="105" y="255" text-anchor="middle">Ravi</text>
+        <rect class="node" x="40" y="320" width="130" height="60" rx="8"/><text x="105" y="355" text-anchor="middle">Mira</text>
+        <rect class="node" x="270" y="215" width="150" height="70" rx="8"/><text x="345" y="245" text-anchor="middle">WebSocket hub</text><text class="sm" x="345" y="264" text-anchor="middle">fan-out + presence</text>
+        <rect class="node" x="440" y="100" width="140" height="80" rx="8"/><text x="510" y="132" text-anchor="middle">Orchestrator</text><text class="sm" x="510" y="151" text-anchor="middle">turn lock</text><text class="sm" x="510" y="167" text-anchor="middle">prompt + 1 LLM call</text>
+        <rect class="node" x="420" y="380" width="180" height="90" rx="8"/><text x="510" y="410" text-anchor="middle">Postgres + pgvector</text><text class="sm" x="510" y="430" text-anchor="middle">messages, plan versions</text><text class="sm" x="510" y="446" text-anchor="middle">KB chunks, NOTIFY</text>
+        <rect class="ext" x="620" y="40" width="140" height="60" rx="8"/><text x="690" y="68" text-anchor="middle">Any LLM</text><text class="sm" x="690" y="86" text-anchor="middle">small, cheap, swappable</text>
+        <rect class="ext" x="630" y="185" width="120" height="60" rx="8"/><text x="690" y="213" text-anchor="middle">Open-Meteo</text><text class="sm" x="690" y="231" text-anchor="middle">weather</text>
+        <g id="pk"></g>
+      </svg>
+      <div id="archstep">
+        <div class="as" data-t="46.3" data-hide="48.2"><b>1</b> A message goes to the WebSocket hub.</div>
+        <div class="as" data-t="48.2" data-hide="50.2"><b>2</b> It is stored in Postgres, then every instance is notified (LISTEN/NOTIFY).</div>
+        <div class="as" data-t="50.2" data-hide="52.0"><b>3</b> The hub fans it out to everyone in the session, under 1 s.</div>
+        <div class="as" data-t="52.0" data-hide="54.2"><b>4</b> The orchestrator takes the turn lock, retrieves KB chunks (pgvector + keyword) and weather, then builds a short prompt.</div>
+        <div class="as" data-t="54.2" data-hide="56.2"><b>5</b> One call to a small, cheap LLM (any provider) returns the reply and plan edits as JSON.</div>
+        <div class="as" data-t="56.2" data-hide="58"><b>6</b> Plan edits are validated, versioned in Postgres and broadcast to every screen.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="cap">
+    <div class="capline" data-t="0.6" data-hide="4">Walkthrough of the user flow, the UI and what happens behind it.</div>
+    <div class="capline" data-t="4.3" data-hide="7.2">Anyone opens the link. <b>No sign-up.</b></div>
+    <div class="capline" data-t="7.3" data-hide="10.2">A session and a <b>6-character code</b> are created instantly. Enter a display name.</div>
+    <div class="capline" data-t="10.3" data-hide="13.5">Copy the invite link or the code and send it to friends.</div>
+    <div class="capline" data-t="13.6" data-hide="17.0">Friends type the code <b>or</b> open the link, pick a name, and join.</div>
+    <div class="capline" data-t="17.1" data-hide="21.4">Up to 8 people per session. Everyone sees who is online.</div>
+    <div class="capline" data-t="21.5" data-hide="26.0">Everyone chats in the same room. The bot sees who said what.</div>
+    <div class="capline" data-t="26.1" data-hide="32.4">Before answering, the bot <b>looks facts up</b> in the NE knowledge base and live weather.</div>
+    <div class="capline" data-t="32.5" data-hide="35.3">It balances both wishes and builds a <b>shared plan</b> that updates live for all.</div>
+    <div class="capline" data-t="35.4" data-hide="40.2">Anyone can add a request; the bot reconciles and updates the plan.</div>
+    <div class="capline" data-t="40.3" data-hide="46">Risky facts like <b>permits</b> carry a source, a verified date and a reminder to double-check.</div>
+    <div class="capline" data-t="46.3" data-hide="52.0">Behind the scenes: one app container and one Postgres database.</div>
+    <div class="capline" data-t="52.0" data-hide="58">One bot turn at a time per session. The model is swappable: any provider, small by default.</div>
+  </div>
+  <div id="barbg"><div id="bar"></div></div>
+</div>
+
+<script>
+const DUR = 58;
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const timed=[...document.querySelectorAll('[data-t]')];
+const typed=[...document.querySelectorAll('[data-type]')];
+const steps=[...document.querySelectorAll('.step')];
+const pk=document.getElementById('pk');
+
+// packets: [pathId, start, dur, reverse]
+const packets=[
+ ['p_b2',46.5,1.4,false],
+ ['p_hp',48.4,1.5,false],
+ ['p_b1',50.4,1.3,true],['p_b2',50.5,1.3,true],['p_b3',50.6,1.3,true],
+ ['p_ho',52.3,1.6,false],['p_op',53.0,1.0,false],['p_ow',53.2,0.8,false],
+ ['p_oc',54.4,0.9,false],['p_oc',55.3,0.9,true],
+ ['p_op',56.4,1.2,false],['p_hp',57.0,0.9,true]
+];
+const NS='http://www.w3.org/2000/svg';
+const pkEls=packets.map(()=>{const c=document.createElementNS(NS,'circle');c.setAttribute('r','7');c.setAttribute('class','pk');pk.appendChild(c);return c});
+
+function seek(t){
+  for(const el of timed){
+    const T=+el.dataset.t, H=el.dataset.hide?+el.dataset.hide:Infinity;
+    const vis=t>=T&&t<H;
+    el.style.display=vis?'':'none';
+    if(!vis) continue;
+    const p=clamp((t-T)/0.35,0,1);
+    let sc=1;
+    if(el.dataset.press){const d=Math.abs(t-(+el.dataset.press)); if(d<0.18) sc=0.93;}
+    el.style.opacity=p;
+    el.style.transform=`translateY(${(1-p)*10}px) scale(${sc})`;
+    if(el.hasAttribute('data-flash')){
+      const q=clamp((t-T)/1.4,0,1);
+      el.style.background=`rgba(226,178,74,${0.55*(1-q)})`;
+    }
+  }
+  for(const el of typed){
+    const T=+el.dataset.t, cps=+el.dataset.cps||30, full=el.dataset.type;
+    const n=clamp(Math.floor((t-T)*cps),0,full.length);
+    el.textContent=full.slice(0,n);
+  }
+  steps.forEach(s=>{const a=+s.dataset.a,b=+s.dataset.b;
+    s.classList.toggle('on',t>=a&&t<b); s.classList.toggle('done',t>=b);});
+  packets.forEach((pc,i)=>{
+    const [id,s,d,rev]=pc; const el=pkEls[i];
+    if(t<s||t>s+d){el.setAttribute('visibility','hidden');return;}
+    const path=document.getElementById(id); const L=path.getTotalLength();
+    let u=(t-s)/d; if(rev)u=1-u;
+    const pt=path.getPointAtLength(u*L);
+    el.setAttribute('cx',pt.x);el.setAttribute('cy',pt.y);el.setAttribute('visibility','visible');
+  });
+  document.getElementById('bar').style.width=(100*clamp(t/DUR,0,1))+'%';
+}
+window.seek=seek; window.DURATION=DUR;
+
+// live playback unless rendering
+if(!location.search.includes('render')){
+  let start=performance.now(),paused=false,off=0;
+  function loop(now){ if(!paused){off=(now-start)/1000;} seek(Math.min(off,DUR)); requestAnimationFrame(loop);}
+  addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused; if(!paused)start=performance.now()-off*1000;}});
+  document.getElementById('barbg').addEventListener('click',e=>{const r=e.currentTarget.getBoundingClientRect();off=(e.clientX-r.left)/r.width*DUR;start=performance.now()-off*1000;});
+  requestAnimationFrame(loop);
+} else { seek(0); }
+</script>
+</body>
+</html>
