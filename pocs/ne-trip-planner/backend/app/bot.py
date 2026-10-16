@@ -7,23 +7,22 @@ import json
 import logging
 import re
 import time
+from pathlib import Path
+
+import yaml
 
 from . import kb, llm, plan as planlib, services, weather
 
 log = logging.getLogger("netrip.bot")
-DELIM = "###PLAN"
 WEATHER_WORDS = re.compile(r"weather|rain|raining|temperature|forecast|humid|snow|hot\b|cold\b", re.I)
 
-SYSTEM = f"""You are the trip-planning assistant in a shared group chat about a trip to Northeast India. Several travellers chat; their messages start with [Name].
-RULES:
-- Use ONLY facts from the KNOWLEDGE block. If it does not contain the answer, say "I don't have that in my notes."
-- Cite sources with their id in square brackets, like [kaziranga].
-- For permits, seasons, closures and road conditions, end with: "Please verify before you travel."
-- If travellers want different things, name each person's wish and propose a mix.
-- Keep the reply under 120 words. Plain text, no markdown headings.
-- To change the plan, after your reply write a new line {DELIM} and then one JSON object: {{"ops":[ ... ]}}
-  ops allowed: {{"op":"add","day":1,"title":"...","note":"...","kb_id":"id from KNOWLEDGE"}}, {{"op":"remove","id":"item id from CURRENT PLAN"}}, {{"op":"day_title","day":1,"title":"..."}}.
-- Only add places that appear in KNOWLEDGE. If the plan needs no change, write nothing after your reply."""
+# Persona, reply rules and the ###PLAN delimiter live in prompts.yaml, not here —
+# edit that file (and restart the container) to tune tone/format, no code change.
+_PROMPTS = yaml.safe_load(Path(__file__).with_name("prompts.yaml").read_text(encoding="utf-8"))
+BOT_NAME = _PROMPTS.get("bot_name", "Mynna")
+DELIM = _PROMPTS.get("delim", "###PLAN")
+SYSTEM = _PROMPTS["system_prompt"].format(
+    bot_name=BOT_NAME, max_reply_words=_PROMPTS.get("max_reply_words", 120), delim=DELIM)
 
 
 def parse_output(text: str) -> tuple[str, list]:
@@ -105,7 +104,7 @@ async def _turn(app, sid, new_msgs) -> None:
                 break
 
     knowledge = "\n".join(f"[{c['id']}] {c['title']} | {c['state'] or ''} | {c['kind']} | {c['text']}" for c in chunks) or "(nothing found)"
-    chat = "\n".join(f"[{r['name'] or 'Bot'}]: {r['content']}" for r in recent)
+    chat = "\n".join(f"[{r['name'] or BOT_NAME}]: {r['content']}" for r in recent)
     prompt = (f"KNOWLEDGE:\n{knowledge}\n" + (f"\nWEATHER:\n{weather_txt}\n" if weather_txt else "")
               + f"\nCURRENT PLAN:\n{planlib.compact(plan)}\n\nTRAVELLERS: {', '.join(people)}\n\nCHAT:\n{chat}\n\nReply now.")
     est = (len(SYSTEM) + len(prompt)) // 4
@@ -144,5 +143,5 @@ async def _turn(app, sid, new_msgs) -> None:
     mid = await services.post_message(app, sid, None, "bot", reply, meta)
     await pool.execute("update sessions set tokens_used = tokens_used + $2 where id = $1", sid, est + len(full) // 4)
     if ops:
-        await services.update_plan(app, sid, ops, "Bot", human=False, valid_kb=valid)
+        await services.update_plan(app, sid, ops, BOT_NAME, human=False, valid_kb=valid)
     await hub.publish(sid, "eph", data={"type": "bot_done", "id": mid})

@@ -18,10 +18,15 @@ docker compose up --build       # http://localhost:8000  (open it on your phone 
 Real model, still container-only:
 
 ```bash
+# Claude direct, no proxy container (ADR-0006) — lightest option, good for small VMs:
+# LLM_PROVIDER=anthropic  LLM_MODEL=claude-haiku-4-5-20251001  ANTHROPIC_API_KEY=sk-ant-... in .env
+docker compose up --build
+
 # self-hosted small model (stock ollama image pulls qwen2.5:1.5b-instruct)
 LLM_PROVIDER=openai docker compose --profile ollama up --build
 # any other provider: set LLM_PROVIDER=openai + LLM_BASE_URL / LLM_MODEL / LLM_API_KEY in .env
-# (OpenAI, OpenRouter, Groq, vLLM, ...). Anthropic/Gemini/Bedrock: use the stock LiteLLM proxy:
+# (OpenAI, OpenRouter, Groq, vLLM, ...). Gemini/Bedrock, or Anthropic on a host with headroom
+# to spare: the stock LiteLLM proxy still works the same way —
 #   docker compose --profile litellm up   (edit litellm.config.yaml first)
 ```
 

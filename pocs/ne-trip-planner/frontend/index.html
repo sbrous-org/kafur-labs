@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f7a5a">
-<title>NE Trip Planner</title>
+<title>Mynna</title>
 <style>
 :root{--bg:#f6f5f0;--card:#fff;--ink:#1d2421;--mute:#5d6762;--line:#dfe3dd;--g:#1f7a5a;--g2:#2f9e72;--soft:#e3f1ea;--me:#d3ebdf;--warn:#fff1d9;--warnt:#a4510f;--danger:#b3261e}
 @media (prefers-color-scheme:dark){:root{--bg:#0f1512;--card:#17201c;--ink:#e8ece9;--mute:#9aa6a0;--line:#2b3631;--g:#3fbf8f;--g2:#3fbf8f;--soft:#18332a;--me:#1d4a3a;--warn:#33280f;--warnt:#f0a35e;--danger:#ff8a80}}
@@ -41,7 +41,7 @@ main{flex:1;min-height:0;display:flex}
 .dots span{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:var(--mute);animation:b 1s infinite}
 .dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
 @keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
-form{display:flex;gap:8px;align-items:flex-end;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
+#form{display:flex;gap:8px;align-items:flex-end;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
 textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink);max-height:120px;min-height:44px}
 #send{border:0;background:var(--g);color:#fff;border-radius:14px;min-width:64px;min-height:44px;font-weight:700;cursor:pointer}
 #send:disabled{opacity:.5}
@@ -84,7 +84,7 @@ dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10
 <body data-tab="chat">
 <div id="app">
   <header>
-    <h1>NE Trip Planner</h1>
+    <h1>Mynna</h1>
     <button class="code" id="codeBtn" title="Invite friends" aria-label="Invite friends">------</button>
     <span class="sp"></span>
     <button class="people" id="people" aria-label="Who is here"></button>
@@ -149,6 +149,9 @@ const api = async (path, opts = {}) => {
 const link = () => `${location.origin}/s/${code}`;
 const colorOf = name => COLORS[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
 const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// Mynna's replies may use **bold** for emphasis (see prompts.yaml); escape first so
+// nothing the model writes can inject HTML, then turn the (now-literal) ** pairs into <strong>.
+const renderMd = s => esc(s).replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
 
 /* ---------- boot ---------- */
 async function boot(){
@@ -233,8 +236,9 @@ function addMsg(m){
   el.className = "m " + (m.role === "system" ? "sys" : m.role === "bot" ? "bot" : mine ? "me" : "") + (m.meta && m.meta.skip_bot ? " cm" : "");
   if (m.role === "system") el.textContent = m.content;
   else {
-    const who = m.role === "bot" ? "Bot" : (mine ? `${m.name} (you)` : m.name || "?");
-    el.innerHTML = `<small>${esc(who)}${m.meta && m.meta.skip_bot ? " &middot; friends only" : ""}</small>` + esc(m.content);
+    const who = m.role === "bot" ? "Mynna" : (mine ? `${m.name} (you)` : m.name || "?");
+    const body = m.role === "bot" ? renderMd(m.content) : esc(m.content);
+    el.innerHTML = `<small>${esc(who)}${m.meta && m.meta.skip_bot ? " &middot; friends only" : ""}</small>` + body;
     if (m.meta && m.meta.cites && m.meta.cites.length){
       const c = document.createElement("div"); c.className = "chips";
       m.meta.cites.forEach(x => { const s = document.createElement("span"); s.className = "cite";
@@ -248,12 +252,14 @@ function addMsg(m){
 function startStream(){
   dropStream();
   streamEl = document.createElement("div"); streamEl.className = "m bot";
-  streamEl.innerHTML = '<small>Bot</small><span class="txt"></span><span class="dots"><span></span><span></span><span></span></span>';
+  streamEl.innerHTML = '<small>Mynna</small><span class="txt"></span><span class="dots"><span></span><span></span><span></span></span>';
+  streamEl._raw = "";
   $("msgs").appendChild(streamEl); scroll();
 }
 function appendStream(t){
   if (!streamEl) startStream();
-  streamEl.querySelector(".txt").textContent += t;
+  streamEl._raw += t;
+  streamEl.querySelector(".txt").innerHTML = renderMd(streamEl._raw);
   const d = streamEl.querySelector(".dots"); if (d) d.style.display = "none"; scroll();
 }
 function dropStream(){ if (streamEl) { streamEl.remove(); streamEl = null; } }
@@ -320,7 +326,7 @@ const openInvite = () => { $("bigCode").textContent = code; $("copied").textCont
 $("codeBtn").onclick = $("inviteBtn").onclick = openInvite;
 $("closeInvite").onclick = () => $("inviteDlg").close();
 $("copyLink").onclick = async () => { try { await navigator.clipboard.writeText(link()); $("copied").textContent = "Link copied"; } catch { $("copied").textContent = link(); } };
-$("shareBtn").onclick = () => navigator.share({title: "Plan our Northeast trip", text: `Join my trip planner. Code: ${code}`, url: link()}).catch(() => {});
+$("shareBtn").onclick = () => navigator.share({title: "Plan our Northeast trip with Mynna", text: `Join my trip on Mynna. Code: ${code}`, url: link()}).catch(() => {});
 $("delBtn").onclick = async () => {
   if (!confirm("Delete this session for everyone? This can't be undone.")) return;
   try { await api(`/api/sessions/${code}`, {method: "DELETE", headers: {"x-token": auth.token}}); store.del(code); location.href = "/"; } catch (e) { toast(e.message); }

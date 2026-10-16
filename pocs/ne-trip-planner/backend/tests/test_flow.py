@@ -83,7 +83,7 @@ def test_group_chat_bot_and_plan(server):
             assert "###PLAN" not in tokens and tokens.strip()
             assert bot_msg["meta"]["cites"], "bot reply should carry KB sources"
             plan = (await recv_until(a, lambda m: m["type"] == "plan"))["plan"]
-            assert plan["days"] and plan["days"][0]["items"][0]["added_by"] == "Bot"
+            assert plan["days"] and plan["days"][0]["items"][0]["added_by"] == "Mynna"
             # human edit: remove an item -> both see updated plan + a system note
             item = plan["days"][0]["items"][0]
             await b.send(json.dumps({"type": "plan_edit", "ops": [{"op": "remove", "id": item["id"]}]}))

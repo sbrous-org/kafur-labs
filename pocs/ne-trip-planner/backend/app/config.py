@@ -12,13 +12,17 @@ def _int(name: str, default: int) -> int:
 class Settings:
     database_url: str = field(default_factory=lambda: os.getenv(
         "DATABASE_URL", "postgresql://netrip:netrip@localhost:5432/netrip"))
-    # --- LLM port: "mock" (offline demo) or "openai" (any OpenAI-compatible endpoint:
-    # Ollama, vLLM, llama.cpp, LiteLLM proxy, OpenAI, OpenRouter, Groq, Together...)
+    # --- LLM port: "mock" (offline demo), "openai" (any OpenAI-compatible endpoint:
+    # Ollama, vLLM, llama.cpp, LiteLLM proxy, OpenAI, OpenRouter, Groq, Together...),
+    # or "anthropic" (direct to api.anthropic.com, no proxy container needed)
     llm_provider: str = field(default_factory=lambda: os.getenv("LLM_PROVIDER", "mock"))
     llm_base_url: str = field(default_factory=lambda: os.getenv("LLM_BASE_URL", "http://ollama:11434/v1"))
     llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "qwen2.5:1.5b-instruct"))
     llm_api_key: str = field(default_factory=lambda: os.getenv("LLM_API_KEY", ""))
     llm_timeout: int = field(default_factory=lambda: _int("LLM_TIMEOUT", 90))
+    anthropic_api_key: str = field(default_factory=lambda: os.getenv("ANTHROPIC_API_KEY", ""))
+    anthropic_base_url: str = field(default_factory=lambda: os.getenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com"))
+    anthropic_version: str = field(default_factory=lambda: os.getenv("ANTHROPIC_VERSION", "2023-06-01"))
     # --- embeddings: "hash" (offline, no model), "openai" (any /v1/embeddings), "none"
     embed_provider: str = field(default_factory=lambda: os.getenv("EMBED_PROVIDER", "hash"))
     embed_base_url: str = field(default_factory=lambda: os.getenv("EMBED_BASE_URL", "") or os.getenv("LLM_BASE_URL", "http://ollama:11434/v1"))

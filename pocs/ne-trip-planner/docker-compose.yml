@@ -23,6 +23,9 @@ services:
       DATABASE_URL: postgresql://netrip:${POSTGRES_PASSWORD:-netrip}@db:5432/netrip
     depends_on: { db: { condition: service_healthy } }
     ports: ["8000:8000"]
+    # Mounted read-only so persona/reply-rule edits take effect on a restart,
+    # with no image rebuild needed.
+    volumes: ["./backend/app/prompts.yaml:/app/app/prompts.yaml:ro"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')"]
       interval: 10s

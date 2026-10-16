@@ -84,3 +84,63 @@ def test_unreachable_endpoint_becomes_llmerror():
             pass
     with pytest.raises(llm.LLMError):
         asyncio.run(go())
+
+
+# ---- anthropic (ADR-0006): direct to /v1/messages, no proxy container ----
+
+def _fake_anthropic(status=200):
+    api = FastAPI()
+    seen = {}
+
+    @api.post("/v1/messages")
+    async def messages(body: dict):
+        seen["body"] = body
+        if status != 200:
+            return JSONResponse({"error": "boom"}, status_code=status)
+        text = 'Try Kaziranga [kaziranga].\n###PLAN\n{"ops":[{"op":"add","day":1,"title":"Kaziranga","kb_id":"kaziranga"}]}'
+
+        async def gen():
+            yield 'event: message_start\ndata: {"type":"message_start"}\n\n'
+            yield 'event: ping\ndata: {"type":"ping"}\n\n'
+            for i in range(0, len(text), 9):
+                yield "event: content_block_delta\ndata: " + json.dumps(
+                    {"type": "content_block_delta", "delta": {"type": "text_delta", "text": text[i:i + 9]}}) + "\n\n"
+            yield 'event: content_block_stop\ndata: {"type":"content_block_stop"}\n\n'
+            yield 'event: message_stop\ndata: {"type":"message_stop"}\n\n'
+        return StreamingResponse(gen(), media_type="text/event-stream")
+    return api, seen
+
+
+def test_streams_and_parses_anthropic_sse():
+    api, seen = _fake_anthropic()
+    srv, port = _serve(api)
+    try:
+        st = Settings(llm_provider="anthropic", anthropic_base_url=f"http://127.0.0.1:{port}",
+                       llm_model="claude-haiku-4-5-20251001", anthropic_api_key="k")
+
+        async def go():
+            msgs = [{"role": "system", "content": "Be terse."}, {"role": "user", "content": "hi"}]
+            return "".join([d async for d in llm.stream(st, msgs)])
+        out = asyncio.run(go())
+        reply, ops = parse_output(out)
+        assert reply == "Try Kaziranga [kaziranga]." and ops[0]["kb_id"] == "kaziranga"
+        # system pulled out of the messages list into its own field, per Anthropic's wire shape
+        assert seen["body"]["system"] == "Be terse."
+        assert seen["body"]["messages"] == [{"role": "user", "content": "hi"}]
+    finally:
+        srv.should_exit = True
+
+
+def test_anthropic_http_error_becomes_llmerror():
+    api, _ = _fake_anthropic(status=500)
+    srv, port = _serve(api)
+    try:
+        st = Settings(llm_provider="anthropic", anthropic_base_url=f"http://127.0.0.1:{port}")
+
+        async def go():
+            async for _ in llm.stream(st, [{"role": "user", "content": "hi"}]):
+                pass
+        with pytest.raises(llm.LLMError):
+            asyncio.run(go())
+    finally:
+        srv.should_exit = True

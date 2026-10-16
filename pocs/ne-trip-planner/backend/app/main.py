@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI):
     await app.state.pool.close()
 
 
-app = FastAPI(title="NE Trip Planner", lifespan=lifespan)
+app = FastAPI(title="Mynna", lifespan=lifespan)
 
 
 def client_ip(request: Request) -> str:
