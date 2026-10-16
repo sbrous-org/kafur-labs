@@ -3,71 +3,138 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1f7a5a">
+<meta name="theme-color" content="#1a6b4d">
 <title>Mynna</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='110 45 150 110'%3E%3Ccircle cx='165' cy='100' r='50' fill='%231e1a18'/%3E%3Cellipse cx='189' cy='96' rx='18' ry='15' fill='%23f2b705'/%3E%3Cpath d='M206 112 Q226 114 238 117 Q222 125 205 121 Z' fill='%23d99a00'/%3E%3Cpath d='M204 100 Q228 102 246 113 Q226 115 206 113 Z' fill='%23f2b705'/%3E%3Ccircle cx='191' cy='96' r='8' fill='%231e1a18'/%3E%3Ccircle cx='194' cy='93' r='3' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f5f0;--card:#fff;--ink:#1d2421;--mute:#5d6762;--line:#dfe3dd;--g:#1f7a5a;--g2:#2f9e72;--soft:#e3f1ea;--me:#d3ebdf;--warn:#fff1d9;--warnt:#a4510f;--danger:#b3261e}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1512;--card:#17201c;--ink:#e8ece9;--mute:#9aa6a0;--line:#2b3631;--g:#3fbf8f;--g2:#3fbf8f;--soft:#18332a;--me:#1d4a3a;--warn:#33280f;--warnt:#f0a35e;--danger:#ff8a80}}
+:root{
+  --bg:#f7f4ec;--card:#fff;--ink:#201d1a;--mute:#6b655d;--line:#e7e1d4;
+  --g:#1a6b4d;--g2:#2f9e72;--soft:#e4f1e9;--me:#dcefe3;
+  --amber:#e8820c;--amber2:#f6b23b;--warn:#fdf0d9;--warnt:#9a540a;--danger:#b3261e;
+  --shadow:0 10px 26px rgba(30,40,30,.09);--shadow-lg:0 24px 64px rgba(20,30,25,.22);
+  --font-d:'Fredoka',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1512;--card:#17201c;--ink:#eef0ec;--mute:#9fa89f;--line:#2a332c;
+  --g:#3fbf8f;--g2:#4fd39f;--soft:#17332a;--me:#1d4a3a;
+  --amber:#f3a23a;--amber2:#ffcf73;--warn:#2c230f;--warnt:#f0b35e;--danger:#ff8a80;
+  --shadow:0 10px 26px rgba(0,0,0,.35);--shadow-lg:0 24px 64px rgba(0,0,0,.6);
+}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{position:relative}
+.bg-decor{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.3}
+.blob1{width:440px;height:440px;left:-100px;top:-140px;background:var(--g2);animation:drift1 22s ease-in-out infinite}
+.blob2{width:380px;height:380px;right:-120px;top:-60px;background:var(--amber2);animation:drift2 27s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,35px) scale(1.08)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-35px,45px) scale(1.1)}}
+.leaf{position:absolute;top:-8%;width:14px;height:14px;opacity:.16;background:var(--g);border-radius:0 70% 0 70%;animation:leafDrift linear infinite}
+.leaf1{left:8%;animation-duration:26s}
+.leaf2{left:42%;animation-duration:34s;animation-delay:-11s;width:10px;height:10px}
+.leaf3{left:68%;animation-duration:30s;animation-delay:-21s}
+.leaf4{left:88%;animation-duration:38s;animation-delay:-6s;width:11px;height:11px}
+@keyframes leafDrift{0%{transform:translateY(-10vh) translateX(0) rotate(0deg)}100%{transform:translateY(110vh) translateX(50px) rotate(230deg)}}
+@media (prefers-reduced-motion:reduce){.blob,.leaf{animation:none}}
 button{font:inherit;color:inherit}
-#app{height:100dvh;display:flex;flex-direction:column;max-width:1180px;margin:0 auto;background:var(--bg)}
-header{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));background:var(--card);border-bottom:1px solid var(--line)}
-header h1{font-size:16px;margin:0;white-space:nowrap}
-.code{background:var(--soft);color:var(--g);border:0;border-radius:999px;padding:6px 12px;font-weight:800;letter-spacing:1.5px;font-size:14px;min-height:36px;cursor:pointer}
+#app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;max-width:1180px;margin:0 auto;background:transparent}
+header{display:flex;align-items:center;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));background:color-mix(in srgb, var(--card) 88%, transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header h1{font:600 18px/1 var(--font-d);margin:0;white-space:nowrap;display:flex;align-items:center;gap:7px;color:var(--g)}
+.logo-bird{width:26px;height:26px;flex:0 0 auto}
+.code{background:var(--soft);color:var(--g);border:0;border-radius:999px;padding:6px 14px;font:700 14px var(--font-d);letter-spacing:1.5px;min-height:36px;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.code:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
 .sp{flex:1}
 .people{display:flex;align-items:center;cursor:pointer;border:0;background:none;padding:2px}
-.av{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-left:-8px;border:2px solid var(--card);position:relative}
+.av{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;margin-left:-8px;border:2px solid var(--card);position:relative;box-shadow:var(--shadow)}
 .av.off{filter:grayscale(1);opacity:.55}
 .av.on::after{content:"";position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:#2ecc71;border:2px solid var(--card)}
-.ibtn{border:1px solid var(--line);background:var(--card);border-radius:10px;min-height:36px;padding:0 12px;cursor:pointer;font-weight:600;font-size:14px}
-#banner{display:none;background:var(--warn);color:var(--warnt);text-align:center;font-size:13px;padding:4px}
-#tabs{display:none;background:var(--card);border-bottom:1px solid var(--line)}
-#tabs button{flex:1;border:0;background:none;padding:11px 0;font-weight:700;color:var(--mute);border-bottom:3px solid transparent;min-height:44px}
+.ibtn{border:1px solid var(--line);background:var(--card);border-radius:10px;min-height:36px;padding:0 14px;cursor:pointer;font-weight:600;font-size:14px;transition:transform .15s,box-shadow .15s,border-color .15s}
+.ibtn:hover{box-shadow:var(--shadow);border-color:var(--g2);transform:translateY(-1px)}
+.ibtn:active{transform:translateY(0)}
+#banner{display:none;background:var(--warn);color:var(--warnt);text-align:center;font-size:13px;padding:5px;font-weight:600}
+#tabs{display:none;background:color-mix(in srgb, var(--card) 88%, transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+#tabs button{flex:1;border:0;background:none;padding:11px 0;font:700 14px var(--font-d);color:var(--mute);border-bottom:3px solid transparent;min-height:44px;transition:color .15s}
 #tabs button.on{color:var(--g);border-color:var(--g)}
-#tabs .badge{display:none;background:var(--g);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px}
+#tabs .badge{display:none;background:var(--amber);color:#fff;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px}
 main{flex:1;min-height:0;display:flex}
 #chat{flex:1 1 62%;display:flex;flex-direction:column;min-width:0;min-height:0}
-#plan{flex:1 1 38%;min-width:0;overflow:auto;padding:12px;border-left:1px solid var(--line);background:var(--card)}
-#msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;overscroll-behavior:contain}
-.m{max-width:86%;padding:8px 12px;border-radius:16px;background:var(--soft);word-wrap:break-word;overflow-wrap:anywhere;align-self:flex-start;white-space:pre-wrap}
-.m small{display:block;font-size:12px;font-weight:700;color:var(--mute)}
-.m.me{align-self:flex-end;background:var(--me)}
-.m.bot{background:var(--card);border:1.5px solid var(--g2)}
-.m.sys{align-self:center;background:none;color:var(--mute);font-size:13px;padding:2px}
-.m.cm{opacity:.85;border:1px dashed var(--line)}
-.chips{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
-.cite{font-size:11.5px;background:var(--warn);color:var(--warnt);border-radius:7px;padding:2px 8px;font-weight:600}
-.dots span{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:var(--mute);animation:b 1s infinite}
+#plan{flex:1 1 38%;min-width:0;overflow:auto;padding:14px;border-left:1px solid var(--line);background:color-mix(in srgb, var(--card) 92%, transparent)}
+#msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+#msgs::-webkit-scrollbar{width:8px}
+#msgs::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.m{display:flex;gap:8px;align-items:flex-end;max-width:92%;animation:rise .25s ease-out both}
+.m.me{align-self:flex-end;flex-direction:row-reverse;max-width:86%}
+.m.bot,.m.other{align-self:flex-start;max-width:86%}
+.m.sys{align-self:center;color:var(--mute);font-size:13px;padding:2px;max-width:100%;animation:none}
+.avatar{width:34px;height:34px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);background:var(--soft)}
+.avatar.person{color:#fff;font-weight:800;font-size:13px}
+svg.avatar{padding:4px}
+/* Moina the mascot: parts are styled by class wherever they occur (compact icon or
+   full hero use the same class names, so a rule simply has nothing to match on a
+   symbol that doesn't include that part). transform-box:fill-box lets each part
+   rotate/scale around its OWN shape instead of hand-computed pixel coordinates -
+   this is what makes the jaw hinge and eye-blink line up correctly at any size. */
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-2px) rotate(-3deg)}50%{transform:translateY(-4px) rotate(0deg)}75%{transform:translateY(-2px) rotate(3deg)}}
+.bob{animation:bob 3s ease-in-out infinite;transform-origin:50% 85%}
+.eye{transform-box:fill-box;transform-origin:center;animation:blink 4.2s ease-in-out infinite}
+@keyframes blink{0%,91%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
+.jaw{transform-box:fill-box;transform-origin:0% 0%}
+.talk .jaw{animation:talk .3s ease-in-out infinite alternate}
+@keyframes talk{from{transform:rotate(0)}to{transform:rotate(18deg)}}
+.hopper{transform-box:fill-box;transform-origin:50% 100%;animation:hop 2.6s ease-in-out infinite}
+@keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.scarf{transform-box:fill-box;transform-origin:50% 0%;animation:sway 2.6s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(6deg)}}
+@media (prefers-reduced-motion:reduce){.bob,.eye,.talk .jaw,.hopper,.scarf{animation:none}}
+.bubble{position:relative;padding:10px 14px;border-radius:18px;background:var(--soft);word-wrap:break-word;overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:var(--shadow)}
+.m.bot .bubble,.m.other .bubble{border-bottom-left-radius:5px;background:var(--card);border:1.5px solid var(--g2)}
+.m.me .bubble{border-bottom-right-radius:5px;background:var(--me)}
+.bubble small{display:block;font:700 11.5px var(--font-d);letter-spacing:.2px;color:var(--mute);margin-bottom:1px}
+.m.cm .bubble{opacity:.85;border-style:dashed}
+.chips{margin-top:7px;display:flex;flex-wrap:wrap;gap:5px}
+.cite{font-size:11.5px;background:var(--warn);color:var(--warnt);border-radius:8px;padding:3px 9px;font-weight:600}
+.dots span{display:inline-block;width:6px;height:6px;margin:0 2px;border-radius:50%;background:var(--g2);animation:b 1s infinite}
 .dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
 @keyframes b{0%,60%,100%{opacity:.25}30%{opacity:1}}
-#form{display:flex;gap:8px;align-items:flex-end;padding:8px 10px;padding-bottom:max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--card)}
-textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:14px;padding:10px 12px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink);max-height:120px;min-height:44px}
-#send{border:0;background:var(--g);color:#fff;border-radius:14px;min-width:64px;min-height:44px;font-weight:700;cursor:pointer}
-#send:disabled{opacity:.5}
-.mode{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute);padding:4px 12px 0;background:var(--card)}
-.mode input{width:18px;height:18px}
-#plan h2{font-size:15px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
-.ver{font-size:12px;background:var(--soft);color:var(--g);border-radius:7px;padding:2px 8px;font-weight:700}
-.day{border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
-.day h3{margin:0;padding:6px 10px;background:var(--soft);font-size:13px}
-.it{display:flex;gap:6px;align-items:center;padding:7px 10px;border-top:1px solid var(--line);font-size:14px}
+#form{display:flex;gap:8px;align-items:flex-end;padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:color-mix(in srgb, var(--card) 88%, transparent);backdrop-filter:blur(10px)}
+textarea{flex:1;resize:none;border:1.5px solid var(--line);border-radius:16px;padding:11px 14px;font:inherit;font-size:16px;background:var(--card);color:var(--ink);max-height:120px;min-height:44px;transition:border-color .15s,box-shadow .15s}
+textarea:focus{outline:none;border-color:var(--g2);box-shadow:0 0 0 3px color-mix(in srgb, var(--g2) 20%, transparent)}
+#send{border:0;background:linear-gradient(135deg,var(--g2),var(--g));color:#fff;border-radius:16px;min-width:68px;min-height:44px;font:700 15px var(--font-d);cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:var(--shadow)}
+#send:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+#send:active{transform:translateY(0)}
+#send:disabled{opacity:.5;cursor:default;transform:none}
+.mode{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute);padding:6px 14px 0;background:color-mix(in srgb, var(--card) 88%, transparent)}
+.mode input{width:18px;height:18px;accent-color:var(--g)}
+#plan h2{font:600 16px var(--font-d);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;color:var(--g)}
+.ver{font:700 12px var(--font-d);background:var(--soft);color:var(--g);border-radius:8px;padding:3px 9px}
+.day{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;background:var(--card);box-shadow:var(--shadow)}
+.day h3{margin:0;padding:8px 12px;background:var(--soft);font:700 13px var(--font-d);color:var(--g)}
+.it{display:flex;gap:6px;align-items:center;padding:8px 12px;border-top:1px solid var(--line);font-size:14px}
 .it .t{flex:1;min-width:0}.it small{display:block;color:var(--mute);font-size:12px}
-.it button{border:0;background:none;color:var(--mute);min-width:32px;min-height:32px;border-radius:8px;cursor:pointer;font-size:15px}
+.it button{border:0;background:none;color:var(--mute);min-width:32px;min-height:32px;border-radius:9px;cursor:pointer;font-size:15px;transition:background .15s}
 .it button:hover{background:var(--soft)}
-.empty{color:var(--mute);font-size:14px;padding:16px 4px}
-.tools{display:flex;gap:8px;margin-top:6px}
+.empty{color:var(--mute);font-size:14px;padding:22px 4px;text-align:center}
+.empty-bird{width:52px;height:52px;display:block;margin:0 auto 10px;opacity:.55}
+.tools{display:flex;gap:8px;margin-top:8px}
 /* dialogs */
-dialog{border:0;border-radius:16px;padding:18px;width:min(92vw,380px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.4)}
-dialog::backdrop{background:rgba(0,0,0,.45)}
-dialog h2{margin:0 0 6px;font-size:18px}
-dialog p{margin:4px 0 10px;color:var(--mute);font-size:14px}
-dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:16px;background:var(--bg);color:var(--ink);margin:6px 0}
-.btn{display:block;width:100%;border:0;background:var(--g);color:#fff;border-radius:12px;padding:12px;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px}
-.btn.alt{background:var(--soft);color:var(--g)}
-.btn.danger{background:none;color:var(--danger)}
-.bigcode{font-size:32px;font-weight:800;letter-spacing:5px;text-align:center;color:var(--g);margin:6px 0}
-.err{color:var(--danger);font-size:14px;min-height:20px}
+dialog{border:0;border-radius:20px;padding:22px;width:min(92vw,380px);max-height:88vh;overflow:auto;background:var(--card);color:var(--ink);box-shadow:var(--shadow-lg)}
+dialog::backdrop{background:rgba(10,15,12,.5);backdrop-filter:blur(2px)}
+.hero-bird{width:88px;height:88px;display:block;margin:0 auto 12px}
+dialog h2{margin:0 0 6px;font:600 19px var(--font-d);text-align:center;color:var(--g)}
+dialog p{margin:4px 0 10px;color:var(--mute);font-size:14px;text-align:center}
+dialog input[type=text]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:16px;background:var(--bg);color:var(--ink);margin:6px 0;transition:border-color .15s,box-shadow .15s}
+dialog input[type=text]:focus{outline:none;border-color:var(--g2);box-shadow:0 0 0 3px color-mix(in srgb, var(--g2) 20%, transparent)}
+.btn{display:block;width:100%;border:0;background:linear-gradient(135deg,var(--g2),var(--g));color:#fff;border-radius:14px;padding:13px;font:700 16px var(--font-d);cursor:pointer;margin-top:9px;transition:transform .15s,box-shadow .15s;box-shadow:var(--shadow)}
+.btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.btn:active{transform:translateY(0)}
+.btn.alt{background:var(--soft);color:var(--g);box-shadow:none}
+.btn.danger{background:none;color:var(--danger);box-shadow:none}
+.bigcode{font:800 34px var(--font-d);letter-spacing:5px;text-align:center;color:var(--g);margin:8px 0}
+.err{color:var(--danger);font-size:14px;min-height:20px;text-align:center}
 /* mobile: one pane at a time, bottom composer stays reachable */
 @media (max-width:760px){
   #tabs{display:flex}
@@ -76,15 +143,85 @@ dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10
   #plan{border-left:0}
   body[data-tab="chat"] #plan{display:none}
   body[data-tab="plan"] #chat{display:none}
-  header h1{display:none}
-  .m{max-width:92%}
+  header .h1-text{display:none}
+  header{gap:6px;padding:8px 10px}
+  .code{padding:6px 10px}
+  .m{max-width:96%}
+  .avatar{width:30px;height:30px}
+  .hero-bird{width:72px;height:72px}
+}
+@media (max-width:380px){
+  .ibtn{padding:0 10px;font-size:13px}
+  .bigcode{font-size:28px;letter-spacing:3px}
 }
 </style>
 </head>
 <body data-tab="chat">
+<div class="bg-decor" aria-hidden="true">
+  <span class="blob blob1"></span>
+  <span class="blob blob2"></span>
+  <span class="leaf leaf1"></span>
+  <span class="leaf leaf2"></span>
+  <span class="leaf leaf3"></span>
+  <span class="leaf leaf4"></span>
+</div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<!-- Mynna, a common myna wearing a gamosa. Two cuts of the same character:
+     myna-icon = compact head+wing (small avatars, header, favicon),
+     myna-full = whole bird with legs/scarf (dialog hero, where there's room). -->
+<symbol id="myna-icon" viewBox="0 0 146 146">
+<g transform="translate(-112,-34)">
+  <g class="head">
+    <circle cx="165" cy="100" r="50" fill="#1e1a18"/>
+    <ellipse cx="189" cy="96" rx="18" ry="15" fill="#f2b705"/>
+    <g class="eye">
+      <circle cx="191" cy="96" r="8" fill="#1e1a18"/>
+      <circle cx="194" cy="93" r="3" fill="#fff"/>
+    </g>
+    <path class="jaw" d="M206 112 Q226 114 238 117 Q222 125 205 121 Z" fill="#d99a00"/>
+    <path d="M204 100 Q228 102 246 113 Q226 115 206 113 Z" fill="#f2b705"/>
+  </g>
+  <path d="M100 146 Q162 168 226 140 L230 190 L96 190 Z" fill="#7a5334"/>
+  <path d="M106 140 Q162 164 222 134 L224 156 Q162 182 104 160 Z" fill="#fbf8f2"/>
+  <path d="M105 152 Q162 175 223 146" stroke="#b3261e" stroke-width="4" fill="none"/>
+</g>
+</symbol>
+<symbol id="myna-full" viewBox="0 0 300 300">
+  <ellipse cx="150" cy="270" rx="62" ry="8" fill="#1e1a18" opacity=".18"/>
+  <g class="hopper">
+    <path d="M130 226 L126 262 M126 262 L112 267 M126 262 L136 268 M170 226 L174 262 M174 262 L162 268 M174 262 L189 267" stroke="#e8a900" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <path d="M96 186 L38 220 L48 238 L106 212 Z" fill="#3b2a1c"/>
+    <path d="M38 220 L48 238 L56 233 L46 216 Z" fill="#f4eee4"/>
+    <ellipse cx="150" cy="180" rx="72" ry="62" fill="#7a5334"/>
+    <ellipse cx="162" cy="196" rx="48" ry="42" fill="#9b7350"/>
+    <ellipse cx="150" cy="237" rx="24" ry="8" fill="#f4eee4"/>
+    <path d="M98 164 Q122 138 162 160 Q176 202 130 226 Q96 214 98 164 Z" fill="#4e3522"/>
+    <path d="M116 204 Q132 198 144 211 Q130 223 114 216 Z" fill="#f4eee4"/>
+    <g class="head">
+      <path d="M142 60 Q146 38 158 54 Q162 34 174 52" stroke="#1e1a18" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <circle cx="165" cy="100" r="50" fill="#1e1a18"/>
+      <ellipse cx="189" cy="96" rx="18" ry="15" fill="#f2b705"/>
+      <g class="eye">
+        <circle cx="191" cy="96" r="8" fill="#1e1a18"/>
+        <circle cx="194" cy="93" r="3" fill="#fff"/>
+      </g>
+      <ellipse cx="178" cy="124" rx="8" ry="4" fill="#e8766a" opacity=".55"/>
+      <path class="jaw" d="M206 112 Q226 114 238 117 Q222 125 205 121 Z" fill="#d99a00"/>
+      <path d="M204 100 Q228 102 246 113 Q226 115 206 113 Z" fill="#f2b705"/>
+    </g>
+    <path d="M112 140 Q162 162 214 136 L216 151 Q162 178 110 154 Z" fill="#fbf8f2"/>
+    <path d="M111 151 Q162 175 215 146" stroke="#b3261e" stroke-width="4" fill="none"/>
+    <g class="scarf">
+      <path d="M180 152 L196 150 L208 196 L188 201 Z" fill="#fbf8f2"/>
+      <path d="M188 193 L207 188" stroke="#b3261e" stroke-width="4"/>
+      <path d="M196 170 L200 175 L196 180 L192 175 Z" fill="#b3261e"/>
+    </g>
+  </g>
+</symbol>
+</svg>
 <div id="app">
   <header>
-    <h1>Mynna</h1>
+    <h1><svg class="logo-bird bob" viewBox="0 0 100 100" aria-hidden="true"><use href="#myna-icon"/></svg><span class="h1-text">Mynna</span></h1>
     <button class="code" id="codeBtn" title="Invite friends" aria-label="Invite friends">------</button>
     <span class="sp"></span>
     <button class="people" id="people" aria-label="Who is here"></button>
@@ -96,7 +233,7 @@ dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10
     <section id="chat">
       <div id="msgs" aria-live="polite"></div>
       <label class="mode"><input type="checkbox" id="friendsOnly"> Friends only (the bot won't answer)</label>
-      <form id="form"><textarea id="text" rows="1" placeholder="Ask the bot or plan with friends&hellip;" maxlength="1000" enterkeyhint="send"></textarea><button id="send" type="submit">Send</button></form>
+      <form id="form"><textarea id="text" rows="1" placeholder="Ask Mynna or plan with friends&hellip;" maxlength="1000" enterkeyhint="send"></textarea><button id="send" type="submit">Send</button></form>
     </section>
     <aside id="plan"><h2>Shared plan <span class="ver" id="ver">empty</span></h2><div id="days"></div>
       <div class="tools"><button class="ibtn" id="copyPlan">Copy plan</button></div></aside>
@@ -104,6 +241,7 @@ dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10
 </div>
 
 <dialog id="nameDlg"><form method="dialog" id="nameForm">
+  <svg class="hero-bird" viewBox="0 0 100 100" aria-hidden="true"><use href="#myna-full"/></svg>
   <h2 id="nameTitle">What should friends call you?</h2>
   <p id="nameSub">You'll join this trip session.</p>
   <input type="text" id="nameInput" maxlength="24" autocomplete="nickname" placeholder="Your name" required>
@@ -113,6 +251,7 @@ dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10
 </form></dialog>
 
 <dialog id="inviteDlg">
+  <svg class="hero-bird" viewBox="0 0 100 100" aria-hidden="true"><use href="#myna-full"/></svg>
   <h2>Invite friends</h2><p>Share the link, or tell them this code:</p>
   <div class="bigcode" id="bigCode"></div>
   <button class="btn" id="shareBtn">Share link</button>
@@ -133,7 +272,7 @@ dialog input[type=text]{width:100%;border:1px solid var(--line);border-radius:10
 (() => {
 "use strict";
 const $ = id => document.getElementById(id);
-const COLORS = ["#1f7a5a","#c2570c","#6b5bd2","#b0396b","#2a7ab0","#8a6d1d","#4b8a2a","#9a3b3b"];
+const COLORS = ["#1a6b4d","#c2570c","#6b5bd2","#b0396b","#2a7ab0","#8a6d1d","#4b8a2a","#9a3b3b"];
 let code = null, auth = null, ws = null, you = null, plan = {days: []}, people = [], retry = 0, streamEl = null, seen = new Set(), lastPing = 0;
 const store = {
   get(c){ try { return JSON.parse(localStorage.getItem("netrip:" + c)); } catch { return null; } },
@@ -152,6 +291,7 @@ const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'
 // Mynna's replies may use **bold** for emphasis (see prompts.yaml); escape first so
 // nothing the model writes can inject HTML, then turn the (now-literal) ** pairs into <strong>.
 const renderMd = s => esc(s).replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
+const birdIcon = cls => `<svg class="avatar ${cls}" viewBox="0 0 100 100" aria-hidden="true"><use href="#myna-icon"/></svg>`;
 
 /* ---------- boot ---------- */
 async function boot(){
@@ -233,26 +373,31 @@ function addMsg(m){
   if (seen.has(m.id)) return; seen.add(m.id);
   const mine = m.pid && you && m.pid === you.id;
   const el = document.createElement("div");
-  el.className = "m " + (m.role === "system" ? "sys" : m.role === "bot" ? "bot" : mine ? "me" : "") + (m.meta && m.meta.skip_bot ? " cm" : "");
-  if (m.role === "system") el.textContent = m.content;
-  else {
-    const who = m.role === "bot" ? "Mynna" : (mine ? `${m.name} (you)` : m.name || "?");
-    const body = m.role === "bot" ? renderMd(m.content) : esc(m.content);
-    el.innerHTML = `<small>${esc(who)}${m.meta && m.meta.skip_bot ? " &middot; friends only" : ""}</small>` + body;
-    if (m.meta && m.meta.cites && m.meta.cites.length){
-      const c = document.createElement("div"); c.className = "chips";
-      m.meta.cites.forEach(x => { const s = document.createElement("span"); s.className = "cite";
-        s.textContent = x.title + (x.verified ? ` \u00b7 verified ${x.verified}` : " \u00b7 unverified") + (x.high_risk ? " \u00b7 check before travel" : "");
-        c.appendChild(s); });
-      el.appendChild(c);
-    }
+  if (m.role === "system") {
+    el.className = "m sys"; el.textContent = m.content;
+    $("msgs").insertBefore(el, streamEl && streamEl.parentNode ? streamEl : null);
+    return;
   }
+  const isBot = m.role === "bot";
+  el.className = "m " + (isBot ? "bot" : mine ? "me" : "other") + (m.meta && m.meta.skip_bot ? " cm" : "");
+  const who = isBot ? "Mynna" : (mine ? `${m.name} (you)` : m.name || "?");
+  const body = isBot ? renderMd(m.content) : esc(m.content);
+  const avatar = isBot ? birdIcon("bob")
+    : (!mine ? `<span class="avatar person" style="background:${colorOf(m.name||"?")}">${esc((m.name||"?")[0].toUpperCase())}</span>` : "");
+  let chips = "";
+  if (m.meta && m.meta.cites && m.meta.cites.length){
+    chips = '<div class="chips">' + m.meta.cites.map(x =>
+      `<span class="cite">${esc(x.title)}${x.verified ? ` &middot; verified ${esc(x.verified)}` : " &middot; unverified"}${x.high_risk ? " &middot; check before travel" : ""}</span>`
+    ).join("") + '</div>';
+  }
+  el.innerHTML = avatar + `<div class="bubble"><small>${esc(who)}${m.meta && m.meta.skip_bot ? " &middot; friends only" : ""}</small>${body}${chips}</div>`;
   const s = streamEl; $("msgs").insertBefore(el, s && s.parentNode ? s : null);
 }
 function startStream(){
   dropStream();
   streamEl = document.createElement("div"); streamEl.className = "m bot";
-  streamEl.innerHTML = '<small>Mynna</small><span class="txt"></span><span class="dots"><span></span><span></span><span></span></span>';
+  streamEl.innerHTML = birdIcon("bob talk") +
+    '<div class="bubble"><small>Mynna</small><span class="txt"></span><span class="dots"><span></span><span></span><span></span></span></div>';
   streamEl._raw = "";
   $("msgs").appendChild(streamEl); scroll();
 }
@@ -279,7 +424,7 @@ function renderPeople(){
 function renderPlan(version, notify){
   $("ver").textContent = version ? `v${version} - live` : "empty";
   const box = $("days"); box.innerHTML = "";
-  if (!plan.days.length) box.innerHTML = '<div class="empty">No plan yet. Tell the bot what you want to see and it will draft one that everyone can edit.</div>';
+  if (!plan.days.length) box.innerHTML = `<div class="empty">${birdIcon("empty-bird")}No plan yet. Tell Mynna what you want to see and it will draft one that everyone can edit.</div>`;
   plan.days.forEach(d => {
     const el = document.createElement("div"); el.className = "day";
     el.innerHTML = `<h3>Day ${d.n}${d.title && d.title !== "Day " + d.n ? " &middot; " + esc(d.title) : ""}</h3>`;
